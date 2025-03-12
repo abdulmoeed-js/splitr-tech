@@ -22,11 +22,7 @@ const App = () => (
         <Routes>
           <Route 
             path="/" 
-            element={
-              <AuthWrapper>
-                <Index />
-              </AuthWrapper>
-            } 
+            element={<Index />} 
           />
           <Route path="/login" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />

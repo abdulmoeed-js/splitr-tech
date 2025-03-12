@@ -1,4 +1,3 @@
-
 import { SignIn, SignUp, useAuth, useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -20,7 +19,9 @@ export const AuthWrapper = ({ children, requireAuth = true }: AuthWrapperProps) 
   }, [isLoaded, isSignedIn, requireAuth, navigate]);
 
   if (!isLoaded) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>;
   }
 
   if (!isSignedIn && requireAuth) {

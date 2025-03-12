@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,14 +12,31 @@ import { PaymentMethod } from "@/types/payment";
 import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+  
+  // Set a default name that works whether logged in or not
+  const userName = user?.fullName || "You";
   
   const [friends, setFriends] = useState<Friend[]>([
-    { id: "1", name: user?.fullName || "You" },
+    { id: "1", name: userName },
     { id: "2", name: "Alice" },
     { id: "3", name: "Bob" },
     { id: "4", name: "Charlie" },
   ]);
+
+  // Update friends list if user name changes
+  useEffect(() => {
+    if (isLoaded && user?.fullName) {
+      setFriends(prev => {
+        const updated = [...prev];
+        const userIndex = updated.findIndex(f => f.id === "1");
+        if (userIndex !== -1) {
+          updated[userIndex] = { ...updated[userIndex], name: user.fullName || "You" };
+        }
+        return updated;
+      });
+    }
+  }, [isLoaded, user?.fullName]);
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [groups, setGroups] = useState<FriendGroup[]>([]);
@@ -256,69 +272,75 @@ const Index = () => {
         Track expenses and settle up with friends
       </p>
       
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-xl font-semibold">Friend Groups</h2>
-          <FriendGroupDialog 
-            friends={friends}
-            groups={groups}
-            onAddGroup={handleAddGroup}
-          />
-        </div>
-        <FriendGroupList 
-          groups={groups}
-          onSelectGroup={handleSelectGroup}
-          selectedGroupId={selectedGroupId}
-        />
-      </div>
-      
-      <Tabs defaultValue="expenses" className="space-y-8">
-        <TabsList className="grid w-full grid-cols-3 rounded-full p-1">
-          <TabsTrigger value="expenses" className="rounded-full">Expenses</TabsTrigger>
-          <TabsTrigger value="balances" className="rounded-full">Balances</TabsTrigger>
-          <TabsTrigger value="reminders" className="rounded-full relative">
-            Reminders
-            {hasUnreadReminders && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-2 h-2"></span>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="expenses" className="space-y-4">
-          {filteredExpenses.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12 glass-panel">
-              No expenses yet. Add your first expense!
+      {!isLoaded ? (
+        <div className="text-center py-10">Loading...</div>
+      ) : (
+        <>
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-xl font-semibold">Friend Groups</h2>
+              <FriendGroupDialog 
+                friends={friends}
+                groups={groups}
+                onAddGroup={handleAddGroup}
+              />
             </div>
-          ) : (
-            <ExpenseList expenses={filteredExpenses} friends={friends} />
-          )}
-        </TabsContent>
+            <FriendGroupList 
+              groups={groups}
+              onSelectGroup={handleSelectGroup}
+              selectedGroupId={selectedGroupId}
+            />
+          </div>
+          
+          <Tabs defaultValue="expenses" className="space-y-8">
+            <TabsList className="grid w-full grid-cols-3 rounded-full p-1">
+              <TabsTrigger value="expenses" className="rounded-full">Expenses</TabsTrigger>
+              <TabsTrigger value="balances" className="rounded-full">Balances</TabsTrigger>
+              <TabsTrigger value="reminders" className="rounded-full relative">
+                Reminders
+                {hasUnreadReminders && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-2 h-2"></span>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="balances">
-          <BalanceSummary 
-            expenses={filteredExpenses} 
-            friends={filteredFriends}
-            payments={payments}
-            paymentMethods={paymentMethods}
-            onSettleDebt={handleSettleDebt} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="reminders">
-          <RemindersList 
-            reminders={reminders}
-            friends={friends}
-            onMarkAsRead={handleMarkReminderAsRead}
-            onSettleReminder={handleSettleReminder}
-          />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="expenses" className="space-y-4">
+              {filteredExpenses.length === 0 ? (
+                <div className="text-center text-muted-foreground py-12 glass-panel">
+                  No expenses yet. Add your first expense!
+                </div>
+              ) : (
+                <ExpenseList expenses={filteredExpenses} friends={friends} />
+              )}
+            </TabsContent>
 
-      <AddExpenseDialog 
-        friends={filteredFriends} 
-        onAddExpense={handleAddExpense} 
-        onAddFriend={handleAddFriend} 
-      />
+            <TabsContent value="balances">
+              <BalanceSummary 
+                expenses={filteredExpenses} 
+                friends={filteredFriends}
+                payments={payments}
+                paymentMethods={paymentMethods}
+                onSettleDebt={handleSettleDebt} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="reminders">
+              <RemindersList 
+                reminders={reminders}
+                friends={friends}
+                onMarkAsRead={handleMarkReminderAsRead}
+                onSettleReminder={handleSettleReminder}
+              />
+            </TabsContent>
+          </Tabs>
+
+          <AddExpenseDialog 
+            friends={filteredFriends} 
+            onAddExpense={handleAddExpense} 
+            onAddFriend={handleAddFriend} 
+          />
+        </>
+      )}
     </div>
   );
 };

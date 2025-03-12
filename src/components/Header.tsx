@@ -2,10 +2,10 @@
 import { useAuth, UserButton } from "@clerk/clerk-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Home, CreditCard, User } from "lucide-react";
+import { Home, User } from "lucide-react";
 
 export const Header = () => {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
   const navigate = useNavigate();
   
   return (
@@ -16,7 +16,9 @@ export const Header = () => {
         </Link>
         
         <div className="flex items-center gap-4">
-          {isSignedIn ? (
+          {!isLoaded ? (
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>
+          ) : isSignedIn ? (
             <>
               <nav className="hidden sm:flex items-center gap-1">
                 <Button variant="ghost" size="sm" asChild>
