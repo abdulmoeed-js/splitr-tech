@@ -7,7 +7,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 240 30% 98%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -15,7 +15,7 @@
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 262 83% 58%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
+    --secondary: 262 83% 96%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -26,7 +26,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 262 83% 58%;
-    --radius: 0.75rem;
+    --radius: 1rem;
   }
 }
 
@@ -40,7 +40,7 @@
 }
 
 .glass-panel {
-  @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg;
+  @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl;
 }
 
 @keyframes slideUp {
@@ -58,3 +58,15 @@
   animation: slideUp 0.3s ease-out;
 }
 
+.balance-card {
+  @apply relative overflow-hidden transition-all hover:shadow-lg;
+}
+
+.balance-card::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 transition-opacity;
+}
+
+.balance-card:hover::before {
+  @apply opacity-100;
+}

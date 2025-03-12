@@ -51,18 +51,23 @@ const Index = () => {
   };
 
   return (
-    <div className="container max-w-2xl py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">Split Buddy</h1>
+    <div className="container max-w-2xl py-8 px-4">
+      <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+        Split Buddy
+      </h1>
+      <p className="text-center text-muted-foreground mb-8">
+        Track expenses and settle up with friends
+      </p>
       
-      <Tabs defaultValue="expenses" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
-          <TabsTrigger value="balances">Balances</TabsTrigger>
+      <Tabs defaultValue="expenses" className="space-y-8">
+        <TabsList className="grid w-full grid-cols-2 rounded-full p-1">
+          <TabsTrigger value="expenses" className="rounded-full">Expenses</TabsTrigger>
+          <TabsTrigger value="balances" className="rounded-full">Balances</TabsTrigger>
         </TabsList>
 
         <TabsContent value="expenses" className="space-y-4">
           {expenses.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12">
+            <div className="text-center text-muted-foreground py-12 glass-panel">
               No expenses yet. Add your first expense!
             </div>
           ) : (
