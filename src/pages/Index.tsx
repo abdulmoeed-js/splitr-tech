@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useUser } from "@clerk/clerk-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExpenseList } from "@/components/ExpenseList";
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
@@ -8,8 +9,10 @@ import { Friend, Expense, Split } from "@/types/expense";
 import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
+  const { user } = useUser();
+  
   const [friends, setFriends] = useState<Friend[]>([
-    { id: "1", name: "You" },
+    { id: "1", name: user?.fullName || "You" },
     { id: "2", name: "Alice" },
     { id: "3", name: "Bob" },
     { id: "4", name: "Charlie" },
