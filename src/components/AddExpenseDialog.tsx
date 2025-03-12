@@ -1,11 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, User, Divide } from "lucide-react";
+import { Plus, User, Divide, Percent } from "lucide-react";
 import { Friend, Split } from "@/types/expense";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -25,18 +25,30 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
   const [splitType, setSplitType] = useState("equal");
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [customSplits, setCustomSplits] = useState<Record<string, string>>({});
+  const [percentageSplits, setPercentageSplits] = useState<Record<string, string>>({});
 
   // Initialize splits when amount changes or when friends selection changes
+  useEffect(() => {
+    if (amount && splitType === "equal") {
+      initializeSplits();
+    }
+  }, [amount, selectedFriends, splitType]);
+
   const initializeSplits = () => {
     const selected = selectedFriends.length > 0 ? selectedFriends : friends.map(f => f.id);
     const perPersonAmount = (Number(amount) / selected.length).toFixed(2);
+    const perPersonPercentage = (100 / selected.length).toFixed(1);
     
     const newSplits: Record<string, string> = {};
+    const newPercentages: Record<string, string> = {};
+    
     selected.forEach(friendId => {
       newSplits[friendId] = perPersonAmount;
+      newPercentages[friendId] = perPersonPercentage;
     });
     
     setCustomSplits(newSplits);
+    setPercentageSplits(newPercentages);
   };
 
   const handleSplitTypeChange = (value: string) => {
@@ -55,13 +67,20 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
         
       // Update splits after selection changes
       setTimeout(() => {
-        if (splitType === "equal" && amount && newSelection.length > 0) {
+        if (amount && newSelection.length > 0) {
           const perPersonAmount = (Number(amount) / newSelection.length).toFixed(2);
+          const perPersonPercentage = (100 / newSelection.length).toFixed(1);
+          
           const newSplits: Record<string, string> = {};
+          const newPercentages: Record<string, string> = {};
+          
           newSelection.forEach(id => {
             newSplits[id] = perPersonAmount;
+            newPercentages[id] = perPersonPercentage;
           });
+          
           setCustomSplits(newSplits);
+          setPercentageSplits(newPercentages);
         }
       }, 0);
       
@@ -76,18 +95,44 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
     }));
   };
 
+  const handlePercentageSplitChange = (friendId: string, value: string) => {
+    // Ensure percentage is between 0 and 100
+    const percentage = Math.min(100, Math.max(0, Number(value) || 0));
+    
+    setPercentageSplits(prev => ({
+      ...prev,
+      [friendId]: percentage.toString()
+    }));
+    
+    // Update the amount based on the percentage
+    if (amount) {
+      const newAmount = (Number(amount) * percentage / 100).toFixed(2);
+      setCustomSplits(prev => ({
+        ...prev,
+        [friendId]: newAmount
+      }));
+    }
+  };
+
   const calculateSplitTotal = () => {
     return Object.values(customSplits).reduce((sum, val) => sum + Number(val), 0);
+  };
+
+  const calculatePercentageTotal = () => {
+    return Object.values(percentageSplits).reduce((sum, val) => sum + Number(val), 0);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!paidBy) {
+      return; // Ensure payer is selected
+    }
+    
     let splits: Split[] = [];
+    const friendsToSplit = selectedFriends.length > 0 ? selectedFriends : friends.map(f => f.id);
     
     if (splitType === "equal") {
-      // If no friends are explicitly selected, split among all friends
-      const friendsToSplit = selectedFriends.length > 0 ? selectedFriends : friends.map(f => f.id);
       const perPersonAmount = Number(amount) / friendsToSplit.length;
       
       splits = friendsToSplit.map(friendId => ({
@@ -95,10 +140,20 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
         amount: perPersonAmount,
       }));
     } else if (splitType === "custom") {
-      splits = Object.entries(customSplits).map(([friendId, splitAmount]) => ({
-        friendId,
-        amount: Number(splitAmount),
-      }));
+      splits = Object.entries(customSplits)
+        .filter(([_, splitAmount]) => Number(splitAmount) > 0)
+        .map(([friendId, splitAmount]) => ({
+          friendId,
+          amount: Number(splitAmount),
+        }));
+    } else if (splitType === "percentage") {
+      splits = Object.entries(percentageSplits)
+        .filter(([_, percentage]) => Number(percentage) > 0)
+        .map(([friendId, percentage]) => ({
+          friendId,
+          amount: Number(amount) * Number(percentage) / 100,
+          percentage: Number(percentage),
+        }));
     }
     
     onAddExpense(description, Number(amount), paidBy, splits);
@@ -108,6 +163,7 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
     setSplitType("equal");
     setSelectedFriends([]);
     setCustomSplits({});
+    setPercentageSplits({});
     setOpen(false);
   };
 
@@ -151,14 +207,7 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
               value={amount}
               onChange={(e) => {
                 setAmount(e.target.value);
-                if (splitType === "equal" && e.target.value && selectedFriends.length > 0) {
-                  const perPersonAmount = (Number(e.target.value) / selectedFriends.length).toFixed(2);
-                  const newSplits: Record<string, string> = {};
-                  selectedFriends.forEach(id => {
-                    newSplits[id] = perPersonAmount;
-                  });
-                  setCustomSplits(newSplits);
-                }
+                // Calculations will be triggered by the useEffect
               }}
               placeholder="0.00"
               min="0"
@@ -225,6 +274,14 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
               </Button>
               <Button
                 type="button"
+                variant={splitType === "percentage" ? "default" : "outline"}
+                onClick={() => handleSplitTypeChange("percentage")}
+                className="flex-1"
+              >
+                <Percent className="mr-1 h-4 w-4" /> Percent
+              </Button>
+              <Button
+                type="button"
                 variant={splitType === "custom" ? "default" : "outline"}
                 onClick={() => handleSplitTypeChange("custom")}
                 className="flex-1"
@@ -260,6 +317,21 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
                       className="w-24"
                     />
                   )}
+
+                  {splitType === "percentage" && (selectedFriends.length === 0 || selectedFriends.includes(friend.id)) && (
+                    <div className="flex items-center w-24">
+                      <Input
+                        value={percentageSplits[friend.id] || ""}
+                        onChange={(e) => handlePercentageSplitChange(friend.id, e.target.value)}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        className="w-16"
+                      />
+                      <span className="ml-1">%</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -271,6 +343,17 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
                   {Number(amount) !== calculateSplitTotal() 
                     ? `Difference: $${(Number(amount) - calculateSplitTotal()).toFixed(2)}` 
                     : "Splits match total ✓"}
+                </span>
+              </div>
+            )}
+
+            {splitType === "percentage" && (
+              <div className="flex justify-between items-center text-sm">
+                <span>Total: {calculatePercentageTotal().toFixed(1)}%</span>
+                <span className={Math.abs(100 - calculatePercentageTotal()) > 0.1 ? "text-red-500" : "text-green-500"}>
+                  {Math.abs(100 - calculatePercentageTotal()) > 0.1
+                    ? `Difference: ${(100 - calculatePercentageTotal()).toFixed(1)}%` 
+                    : "Percentages match 100% ✓"}
                 </span>
               </div>
             )}
