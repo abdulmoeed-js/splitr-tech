@@ -192,6 +192,7 @@ export type Database = {
           from_friend_id: string
           id: string
           method: string
+          payment_method_id: string | null
           receipt_url: string | null
           status: string
           to_friend_id: string
@@ -204,6 +205,7 @@ export type Database = {
           from_friend_id: string
           id?: string
           method: string
+          payment_method_id?: string | null
           receipt_url?: string | null
           status: string
           to_friend_id: string
@@ -216,6 +218,7 @@ export type Database = {
           from_friend_id?: string
           id?: string
           method?: string
+          payment_method_id?: string | null
           receipt_url?: string | null
           status?: string
           to_friend_id?: string
