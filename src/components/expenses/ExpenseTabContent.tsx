@@ -11,7 +11,14 @@ interface ExpenseTabContentProps {
   payments?: SettlementPayment[];
 }
 
-export const ExpenseTabContent = ({ expenses, friends }: ExpenseTabContentProps) => {
+export const ExpenseTabContent = ({ 
+  expenses, 
+  friends, 
+  reminders = [],
+  onMarkReminderAsRead,
+  onSettleReminder,
+  payments = []
+}: ExpenseTabContentProps) => {
   if (expenses.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-12 glass-panel">

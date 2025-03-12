@@ -20,7 +20,7 @@ import { SettlementDialog } from "@/components/settlements/SettlementDialog";
 export default function Home() {
   const { session, userName } = useSession();
   const { expenses, handleAddExpense } = useExpenses();
-  const { friends } = useFriends(session, userName);
+  const { friends, handleAddFriend, handleInviteFriend } = useFriends(session, userName);
   const { groups, addGroup } = useGroups(session, friends);
   const { payments, settleDebt } = usePayments(session);
   const { reminders, handleMarkReminderAsRead, handleSettleReminder } = useReminders(session);
@@ -54,7 +54,7 @@ export default function Home() {
 
   const handleSettleUp = (paymentMethod: string, amount: number) => {
     if (selectedReminder) {
-      handleSettleReminder(selectedReminder.id);
+      handleSettleReminder(selectedReminder);
     }
     setIsSettlementOpen(false);
     setSelectedReminder(null);
@@ -129,6 +129,10 @@ export default function Home() {
               <ExpenseTabContent
                 expenses={filteredExpenses}
                 friends={filteredFriends}
+                reminders={reminders}
+                onMarkReminderAsRead={handleMarkReminderAsRead}
+                onSettleReminder={openSettlementDialog}
+                payments={payments}
               />
             </TabsContent>
           </Tabs>
@@ -137,11 +141,16 @@ export default function Home() {
           <AddExpenseDialog
             onAddExpense={handleAddNewExpense}
             friends={filteredFriends}
+            onAddFriend={handleAddFriend}
+            onInviteFriend={handleInviteFriend}
           />
           
           <SettlementDialog
-            onSettle={handleSettleUp}
-            reminder={selectedReminder}
+            fromFriend={{id: "1", name: "You"}}
+            toFriend={selectedReminder?.toFriendId ? friends.find(f => f.id === selectedReminder.toFriendId) || {id: "unknown", name: "Unknown"} : {id: "unknown", name: "Unknown"}}
+            amount={selectedReminder?.amount || 0}
+            paymentMethods={[]}
+            onSettleDebt={handleSettleUp}
           />
         </div>
       </div>
