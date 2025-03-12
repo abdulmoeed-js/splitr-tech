@@ -5,9 +5,10 @@ import { ExpenseList } from "@/components/ExpenseList";
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
 import { BalanceSummary } from "@/components/BalanceSummary";
 import { Friend, Expense, Split } from "@/types/expense";
+import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
-  const [friends] = useState<Friend[]>([
+  const [friends, setFriends] = useState<Friend[]>([
     { id: "1", name: "You" },
     { id: "2", name: "Alice" },
     { id: "3", name: "Bob" },
@@ -31,6 +32,22 @@ const Index = () => {
       splits,
     };
     setExpenses((prev) => [...prev, newExpense]);
+    toast({
+      title: "Expense Added",
+      description: `$${amount.toFixed(2)} for ${description}`,
+    });
+  };
+
+  const handleAddFriend = (name: string) => {
+    const newFriend: Friend = {
+      id: Date.now().toString(),
+      name,
+    };
+    setFriends((prev) => [...prev, newFriend]);
+    toast({
+      title: "Friend Added",
+      description: `${name} has been added to your friends list.`,
+    });
   };
 
   return (
@@ -58,7 +75,11 @@ const Index = () => {
         </TabsContent>
       </Tabs>
 
-      <AddExpenseDialog friends={friends} onAddExpense={handleAddExpense} />
+      <AddExpenseDialog 
+        friends={friends} 
+        onAddExpense={handleAddExpense} 
+        onAddFriend={handleAddFriend} 
+      />
     </div>
   );
 };
