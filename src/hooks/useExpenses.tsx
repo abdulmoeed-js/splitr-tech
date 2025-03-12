@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, createContext, useContext } from 'react';
 import { Friend, Expense, Split, FriendGroup, SettlementPayment, PaymentReminder } from '@/types/expense';
 import { useSession } from '@/hooks/useSession';
@@ -53,7 +54,7 @@ export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   
   const { 
     expenses, 
-    isLoading: isExpensesLoading,
+    isExpensesLoading,
     addExpense 
   } = useExpenseData(session);
   
@@ -68,20 +69,20 @@ export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   
   const {
     groups,
-    isLoading: isGroupsLoading,
+    isGroupsLoading,
     addGroup,
   } = useGroups(session, friends);
   
   const {
     payments,
-    isLoading: isPaymentsLoading,
+    isPaymentsLoading,
     settleDebt
   } = usePayments(session);
   
   const {
     reminders,
     hasUnreadReminders,
-    isLoading: isRemindersLoading,
+    isRemindersLoading,
     markReminderAsRead,
     settleReminder
   } = useReminders(session);
@@ -136,16 +137,26 @@ export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     reminders,
     paymentMethods,
     hasUnreadReminders,
-    handleAddExpense: addExpense,
+    handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[]) => {
+      addExpense(description, amount, paidBy, splits);
+    },
     handleAddFriend,
     handleUpdateFriend,
     handleInviteFriend,
     handleRemoveFriend,
-    handleAddGroup: addGroup,
+    handleAddGroup: (name: string, memberIds: string[]) => {
+      addGroup(name, memberIds);
+    },
     handleSelectGroup: setSelectedGroupId,
-    handleSettleDebt: settleDebt,
-    handleMarkReminderAsRead: markReminderAsRead,
-    handleSettleReminder: settleReminder
+    handleSettleDebt: (payment: SettlementPayment) => {
+      settleDebt(payment);
+    },
+    handleMarkReminderAsRead: (reminderId: string) => {
+      markReminderAsRead(reminderId);
+    },
+    handleSettleReminder: (reminder: PaymentReminder) => {
+      settleReminder(reminder);
+    }
   };
 
   return (

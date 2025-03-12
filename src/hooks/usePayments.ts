@@ -4,9 +4,11 @@ import { SettlementPayment } from "@/types/expense";
 import { toast } from "@/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Session } from "@supabase/supabase-js";
+import { useState } from "react";
 
 export const usePayments = (session: Session | null) => {
   const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch payments
   const { data: payments = [], isLoading: isPaymentsLoading } = useQuery({
@@ -115,7 +117,19 @@ export const usePayments = (session: Session | null) => {
   return {
     payments,
     isPaymentsLoading,
+    isLoading,
     handleSettleDebt: (payment: SettlementPayment) => {
+      addPaymentMutation.mutate({
+        fromFriendId: payment.fromFriendId,
+        toFriendId: payment.toFriendId,
+        amount: payment.amount,
+        method: payment.method,
+        status: payment.status,
+        paymentMethodId: payment.paymentMethodId,
+        receiptUrl: payment.receiptUrl
+      });
+    },
+    settleDebt: (payment: SettlementPayment) => {
       addPaymentMutation.mutate({
         fromFriendId: payment.fromFriendId,
         toFriendId: payment.toFriendId,

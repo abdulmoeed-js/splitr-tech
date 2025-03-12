@@ -7,6 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 export const useSession = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const queryClient = useQueryClient();
   
   // Default name that works whether logged in or not
@@ -16,6 +18,8 @@ export const useSession = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         setSession(currentSession);
+        setUser(currentSession?.user || null);
+        
         if (currentSession?.user && event === 'SIGNED_IN') {
           // Force a refetch of data when user signs in
           queryClient.invalidateQueries({ queryKey: ['friends'] });
@@ -27,9 +31,19 @@ export const useSession = () => {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-    });
+    const fetchSession = async () => {
+      setIsLoading(true);
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        setUser(currentSession?.user || null);
+      } finally {
+        setIsLoading(false);
+        setIsLoaded(true);
+      }
+    };
+    
+    fetchSession();
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -38,6 +52,8 @@ export const useSession = () => {
 
   return {
     session,
+    user,
+    isLoading,
     isSessionLoaded: isLoaded,
     setSessionLoaded: setIsLoaded,
     userName

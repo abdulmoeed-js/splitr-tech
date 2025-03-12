@@ -28,6 +28,7 @@ export interface FriendGroup {
   id: string;
   name: string;
   members: Friend[];
+  createdAt: Date;
 }
 
 export interface SettlementPayment {
@@ -37,6 +38,9 @@ export interface SettlementPayment {
   amount: number;
   date: Date;
   status: 'pending' | 'completed';
+  method: 'in-app' | 'external' | 'card' | 'easypaisa' | 'jazzcash' | 'bank';
+  paymentMethodId?: string;
+  receiptUrl?: string;
 }
 
 export interface PaymentReminder {

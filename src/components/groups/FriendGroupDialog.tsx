@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,18 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/use-toast";
-import { Friend, FriendGroup } from "@/types/expense";
+import { Friend } from "@/types/expense";
 import { Plus, Users } from "lucide-react";
 
 interface FriendGroupDialogProps {
   friends: Friend[];
-  groups: FriendGroup[];
-  onAddGroup: (group: FriendGroup) => void;
+  onAddGroup: (name: string, memberIds: string[]) => void;
 }
 
 export const FriendGroupDialog = ({ 
   friends, 
-  groups, 
   onAddGroup 
 }: FriendGroupDialogProps) => {
   const [open, setOpen] = useState(false);
@@ -43,14 +40,7 @@ export const FriendGroupDialog = ({
       return;
     }
     
-    const newGroup: FriendGroup = {
-      id: Date.now().toString(),
-      name: groupName.trim(),
-      members: friends.filter(friend => selectedFriends.includes(friend.id)),
-      createdAt: new Date()
-    };
-    
-    onAddGroup(newGroup);
+    onAddGroup(groupName.trim(), selectedFriends);
     setOpen(false);
     setGroupName("");
     setSelectedFriends([]);

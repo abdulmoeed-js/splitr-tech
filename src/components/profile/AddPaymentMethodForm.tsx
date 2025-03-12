@@ -40,7 +40,9 @@ export const AddPaymentMethodForm = ({
           type: "card",
           name: methodName || "Credit/Debit Card",
           lastFour: cardNumber.slice(-4),
-          expiryDate: cardExpiry
+          expiryDate: cardExpiry,
+          created: new Date(),
+          isDefault: false
         };
         break;
         
@@ -52,7 +54,9 @@ export const AddPaymentMethodForm = ({
           id: Date.now().toString(),
           type: methodType as "easypaisa" | "jazzcash",
           name: methodName || (methodType === "easypaisa" ? "EasyPaisa" : "JazzCash"),
-          phoneNumber
+          phoneNumber,
+          created: new Date(),
+          isDefault: false
         };
         break;
         
@@ -66,7 +70,9 @@ export const AddPaymentMethodForm = ({
           type: "bank",
           name: methodName || "Bank Account",
           bankName,
-          accountNumber
+          accountNumber,
+          created: new Date(),
+          isDefault: false
         };
         break;
         

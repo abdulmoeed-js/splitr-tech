@@ -9,6 +9,7 @@ import { useState } from "react";
 export const useGroups = (session: Session | null, friends: Friend[]) => {
   const queryClient = useQueryClient();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch friend groups
   const { data: groups = [], isLoading: isGroupsLoading } = useQuery({
@@ -114,6 +115,7 @@ export const useGroups = (session: Session | null, friends: Friend[]) => {
   return {
     groups,
     isGroupsLoading,
+    isLoading,
     selectedGroupId,
     handleSelectGroup: (groupId: string | null) => {
       setSelectedGroupId(groupId);
@@ -123,6 +125,9 @@ export const useGroups = (session: Session | null, friends: Friend[]) => {
         name: group.name, 
         memberIds: group.members.map(m => m.id) 
       });
+    },
+    addGroup: (name: string, memberIds: string[]) => {
+      addGroupMutation.mutate({ name, memberIds });
     }
   };
 };

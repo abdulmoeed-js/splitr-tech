@@ -1,12 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { PaymentReminder, Friend } from "@/types/expense";
+import { PaymentReminder } from "@/types/expense";
 import { toast } from "@/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Session } from "@supabase/supabase-js";
+import { useState } from "react";
 
-export const useReminders = (session: Session | null, friends: Friend[]) => {
+export const useReminders = (session: Session | null) => {
   const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch reminders
   const { data: reminders = [], isLoading: isRemindersLoading } = useQuery({
@@ -37,41 +39,81 @@ export const useReminders = (session: Session | null, friends: Friend[]) => {
     enabled: !!session
   });
 
-  // Update reminder mutation
-  const updateReminderMutation = useMutation({
-    mutationFn: async ({ 
-      reminderId, 
-      updates 
-    }: { 
-      reminderId: string; 
-      updates: { isRead?: boolean; isPaid?: boolean } 
-    }) => {
-      if (!session?.user) {
-        return { id: reminderId, ...updates };
-      }
+  // Calculate if there are any unread reminders
+  const hasUnreadReminders = reminders.some(reminder => !reminder.isRead);
 
-      const updateData: any = {};
-      if (updates.isRead !== undefined) updateData.is_read = updates.isRead;
-      if (updates.isPaid !== undefined) updateData.is_paid = updates.isPaid;
+  // Mark reminder as read mutation
+  const markReminderAsReadMutation = useMutation({
+    mutationFn: async (reminderId: string) => {
+      if (!session?.user) return reminderId;
 
       const { error } = await supabase
         .from('payment_reminders')
-        .update(updateData)
+        .update({ is_read: true })
         .eq('id', reminderId)
         .eq('user_id', session.user.id);
       
       if (error) throw error;
       
-      return { id: reminderId, ...updates };
+      return reminderId;
     },
-    onSuccess: (data) => {
+    onSuccess: (reminderId) => {
       queryClient.setQueryData(['reminders'], (oldReminders: PaymentReminder[] = []) => 
         oldReminders.map(reminder => 
-          reminder.id === data.id
-            ? { ...reminder, ...data }
+          reminder.id === reminderId
+            ? { ...reminder, isRead: true }
             : reminder
         )
       );
+    }
+  });
+
+  // Settle reminder mutation
+  const settleReminderMutation = useMutation({
+    mutationFn: async (reminder: PaymentReminder) => {
+      if (!session?.user) return reminder;
+
+      const { error } = await supabase
+        .from('payment_reminders')
+        .update({ is_paid: true })
+        .eq('id', reminder.id)
+        .eq('user_id', session.user.id);
+      
+      if (error) throw error;
+      
+      // Also create a payment record
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          user_id: session.user.id,
+          from_friend_id: reminder.fromFriendId,
+          to_friend_id: reminder.toFriendId,
+          amount: reminder.amount,
+          status: 'completed',
+          method: 'in-app'
+        });
+      
+      if (paymentError) throw paymentError;
+      
+      return reminder;
+    },
+    onSuccess: (reminder) => {
+      // Update reminders list
+      queryClient.setQueryData(['reminders'], (oldReminders: PaymentReminder[] = []) => 
+        oldReminders.map(r => 
+          r.id === reminder.id
+            ? { ...r, isPaid: true }
+            : r
+        )
+      );
+      
+      // Invalidate payments to fetch the new payment
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      
+      toast({
+        title: "Payment Completed",
+        description: `The payment of ${reminder.amount} has been made`
+      });
     }
   });
 
@@ -102,7 +144,9 @@ export const useReminders = (session: Session | null, friends: Friend[]) => {
           from_friend_id: newReminder.fromFriendId,
           to_friend_id: newReminder.toFriendId,
           amount: newReminder.amount,
-          due_date: newReminder.dueDate.toISOString()
+          due_date: newReminder.dueDate.toISOString(),
+          is_read: false,
+          is_paid: false
         })
         .select()
         .single();
@@ -121,39 +165,40 @@ export const useReminders = (session: Session | null, friends: Friend[]) => {
     },
     onSuccess: (newReminder) => {
       queryClient.setQueryData(['reminders'], (oldReminders: PaymentReminder[] = []) => 
-        [...oldReminders, newReminder]
+        [newReminder, ...oldReminders]
       );
+      
+      toast({
+        title: "Reminder Created",
+        description: `Payment reminder for ${newReminder.amount} has been created`
+      });
     }
   });
-
-  // Calculate if there are unread reminders
-  const hasUnreadReminders = reminders.some(r => !r.isRead);
 
   return {
     reminders,
     isRemindersLoading,
+    isLoading,
     hasUnreadReminders,
     handleMarkReminderAsRead: (reminderId: string) => {
-      updateReminderMutation.mutate({ reminderId, updates: { isRead: true } });
+      markReminderAsReadMutation.mutate(reminderId);
     },
     handleSettleReminder: (reminder: PaymentReminder) => {
-      updateReminderMutation.mutate({ 
-        reminderId: reminder.id, 
-        updates: { isPaid: true } 
-      });
-      
-      toast({
-        title: "Payment Successful",
-        description: `You paid ${friends.find(f => f.id === reminder.toFriendId)?.name} $${reminder.amount.toFixed(2)}`
-      });
+      settleReminderMutation.mutate(reminder);
     },
-    createReminder: (reminder: { 
+    createReminder: (reminderData: { 
       fromFriendId: string; 
       toFriendId: string; 
       amount: number;
       dueDate: Date;
     }) => {
-      createReminderMutation.mutate(reminder);
+      createReminderMutation.mutate(reminderData);
+    },
+    markReminderAsRead: (reminderId: string) => {
+      markReminderAsReadMutation.mutate(reminderId);
+    },
+    settleReminder: (reminder: PaymentReminder) => {
+      settleReminderMutation.mutate(reminder);
     }
   };
 };

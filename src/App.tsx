@@ -1,49 +1,53 @@
 
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthWrapper, SignInPage, SignUpPage } from "./components/AuthWrapper";
-import { Header } from "./components/Header";
-import Index from "./pages/Index";
-import Profile from "./pages/Profile";
-import Friends from "./pages/Friends";
-import NotFound from "./pages/NotFound";
+import { AuthWrapper } from "@/components/AuthWrapper";
+import { ExpensesProvider } from "@/hooks/useExpenses";
+import Home from "@/pages/Index";
+import ProfilePage from "@/pages/Profile";
+import FriendsPage from "@/pages/Friends";
+import NotFound from "@/pages/NotFound";
+import { Header } from './components/Header';
 
-const queryClient = new QueryClient();
+import "./App.css";
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Header />
-        <Routes>
-          <Route 
-            path="/" 
-            element={<Index />} 
-          />
-          <Route path="/login" element={<SignInPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route 
-            path="/profile" 
-            element={
-              <AuthWrapper>
-                <Profile />
-              </AuthWrapper>
-            } 
-          />
-          <Route 
-            path="/friends" 
-            element={<Friends />} 
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Router>
+          <ThemeProvider defaultTheme="dark" storageKey="expense-tracker-theme">
+            <AuthWrapper>
+              <ExpensesProvider>
+                <Header />
+                <div className="outer-container">
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/friends" element={<FriendsPage />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+                <Toaster />
+              </ExpensesProvider>
+            </AuthWrapper>
+          </ThemeProvider>
+        </Router>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

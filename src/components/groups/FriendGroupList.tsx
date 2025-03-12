@@ -57,7 +57,7 @@ export const FriendGroupList = ({
               <div>
                 <h3 className="font-semibold">{group.name}</h3>
                 <p className="text-xs text-muted-foreground">
-                  Created {format(group.createdAt, "MMM d, yyyy")}
+                  Created {format(new Date(group.createdAt), "MMM d, yyyy")}
                 </p>
               </div>
             </div>
