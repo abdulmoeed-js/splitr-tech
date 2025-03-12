@@ -101,20 +101,32 @@ export type Database = {
       friends: {
         Row: {
           created_at: string
+          email: string | null
           id: string
+          is_complete: boolean | null
+          is_invited: boolean | null
           name: string
+          phone: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id?: string
+          is_complete?: boolean | null
+          is_invited?: boolean | null
           name: string
+          phone?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
+          is_complete?: boolean | null
+          is_invited?: boolean | null
           name?: string
+          phone?: string | null
           user_id?: string
         }
         Relationships: []

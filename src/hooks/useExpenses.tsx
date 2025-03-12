@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, createContext, useContext } from 'react';
 import { Friend, Expense, Split, FriendGroup, SettlementPayment, PaymentReminder } from '@/types/expense';
 import { useSession } from '@/hooks/useSession';
@@ -45,6 +44,7 @@ export const useExpenses = () => {
 };
 
 export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   
