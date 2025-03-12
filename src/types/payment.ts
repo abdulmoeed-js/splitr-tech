@@ -9,4 +9,6 @@ export interface PaymentMethod {
   accountNumber?: string;
   country?: string;
   phoneNumber?: string;
+  created: Date;
+  isDefault: boolean;
 }

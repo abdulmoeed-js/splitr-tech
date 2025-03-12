@@ -1,16 +1,16 @@
 
 import { useState } from "react";
-import { Plus, Check } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PaymentMethodsList } from "./PaymentMethodsList";
 import { AddPaymentMethodForm } from "./AddPaymentMethodForm";
-import { PaymentMethod } from "@/types/payment";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 
 export const PaymentMethodsTab = () => {
   const { 
     paymentMethods, 
+    loading,
     preferredPaymentMethodId,
     addPaymentMethod, 
     removePaymentMethod, 
@@ -41,12 +41,18 @@ export const PaymentMethodsTab = () => {
         </Dialog>
       </div>
 
-      <PaymentMethodsList 
-        paymentMethods={paymentMethods} 
-        preferredMethodId={preferredPaymentMethodId}
-        onRemovePaymentMethod={removePaymentMethod}
-        onSetPreferredMethod={setPreferredMethod}
-      />
+      {loading ? (
+        <div className="p-6 text-center bg-gray-800 rounded-xl">
+          <p className="text-gray-500">Loading payment methods...</p>
+        </div>
+      ) : (
+        <PaymentMethodsList 
+          paymentMethods={paymentMethods} 
+          preferredMethodId={preferredPaymentMethodId}
+          onRemovePaymentMethod={removePaymentMethod}
+          onSetPreferredMethod={setPreferredMethod}
+        />
+      )}
     </>
   );
 };

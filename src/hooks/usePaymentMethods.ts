@@ -31,13 +31,13 @@ export const usePaymentMethods = () => {
         const transformedData = data.map((method): PaymentMethod => ({
           id: method.id,
           name: method.name,
-          type: method.type,
-          isDefault: method.is_default,
+          type: method.type as PaymentMethod['type'],
           lastFour: method.last_four || undefined,
           expiryDate: method.expiry_date || undefined,
           accountNumber: method.account_number || undefined,
           phoneNumber: method.phone_number || undefined,
-          created: new Date(method.created_at)
+          created: new Date(method.created_at),
+          isDefault: method.is_default
         }));
 
         setPaymentMethods(transformedData);
@@ -83,7 +83,7 @@ export const usePaymentMethods = () => {
       const newMethod: PaymentMethod = {
         id: data.id,
         name: data.name,
-        type: data.type,
+        type: data.type as PaymentMethod['type'],
         isDefault: data.is_default,
         lastFour: data.last_four || undefined,
         expiryDate: data.expiry_date || undefined,
@@ -187,11 +187,15 @@ export const usePaymentMethods = () => {
     }
   };
 
+  // Get the preferred (default) payment method ID
+  const preferredPaymentMethodId = paymentMethods.find(method => method.isDefault)?.id || null;
+
   return {
     paymentMethods,
     loading,
+    preferredPaymentMethodId,
     addPaymentMethod,
     removePaymentMethod,
-    setDefaultPaymentMethod
+    setPreferredMethod: setDefaultPaymentMethod
   };
 };

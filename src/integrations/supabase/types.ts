@@ -148,6 +148,45 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          account_number: string | null
+          created_at: string
+          expiry_date: string | null
+          id: string
+          is_default: boolean
+          last_four: string | null
+          name: string
+          phone_number: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          account_number?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          is_default?: boolean
+          last_four?: string | null
+          name: string
+          phone_number?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          account_number?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          is_default?: boolean
+          last_four?: string | null
+          name?: string
+          phone_number?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_reminders: {
         Row: {
           amount: number
