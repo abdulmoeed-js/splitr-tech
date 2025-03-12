@@ -1,45 +1,40 @@
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PaymentMethodsList } from "./PaymentMethodsList";
 import { AddPaymentMethodForm } from "./AddPaymentMethodForm";
 import { PaymentMethod } from "@/types/payment";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 
 export const PaymentMethodsTab = () => {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-    { id: "1", type: "card", name: "Personal Card", lastFour: "4242", expiryDate: "04/25" },
-    { id: "2", type: "easypaisa", name: "EasyPaisa", phoneNumber: "03001234567" },
-    { id: "3", type: "jazzcash", name: "JazzCash", phoneNumber: "03121234567" },
-    { id: "4", type: "bank", name: "Bank Account", bankName: "HBL", accountNumber: "12345678901" }
-  ]);
+  const { 
+    paymentMethods, 
+    preferredPaymentMethodId,
+    addPaymentMethod, 
+    removePaymentMethod, 
+    setPreferredMethod 
+  } = usePaymentMethods();
+  
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  const handleAddPaymentMethod = (newMethod: PaymentMethod) => {
-    setPaymentMethods([...paymentMethods, newMethod]);
-  };
-
-  const handleRemovePaymentMethod = (id: string) => {
-    setPaymentMethods(paymentMethods.filter(method => method.id !== id));
-  };
 
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Your Payment Methods</h2>
+        <h2 className="text-lg font-semibold">Your Payment Methods</h2>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="rounded-full">
-              <Plus className="mr-2 h-4 w-4" /> Add Method
+            <Button variant="outline" size="sm" className="rounded-full bg-gray-800 border-none">
+              <Plus className="h-4 w-4" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="glass-panel">
+          <DialogContent className="bg-gray-900 text-white border-gray-800">
             <DialogHeader>
               <DialogTitle>Add Payment Method</DialogTitle>
             </DialogHeader>
             <AddPaymentMethodForm 
-              onAddPaymentMethod={handleAddPaymentMethod} 
+              onAddPaymentMethod={addPaymentMethod} 
               onClose={() => setDialogOpen(false)} 
             />
           </DialogContent>
@@ -48,7 +43,9 @@ export const PaymentMethodsTab = () => {
 
       <PaymentMethodsList 
         paymentMethods={paymentMethods} 
-        onRemovePaymentMethod={handleRemovePaymentMethod} 
+        preferredMethodId={preferredPaymentMethodId}
+        onRemovePaymentMethod={removePaymentMethod}
+        onSetPreferredMethod={setPreferredMethod}
       />
     </>
   );

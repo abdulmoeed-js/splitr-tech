@@ -38,7 +38,7 @@ export const AddPaymentMethodForm = ({
         newMethod = {
           id: Date.now().toString(),
           type: "card",
-          name: methodName || "Card",
+          name: methodName || "Credit/Debit Card",
           lastFour: cardNumber.slice(-4),
           expiryDate: cardExpiry
         };
@@ -76,11 +76,6 @@ export const AddPaymentMethodForm = ({
     
     onAddPaymentMethod(newMethod);
     onClose();
-    
-    toast({
-      title: "Payment Method Added",
-      description: `${newMethod.name} has been added to your account.`
-    });
   };
 
   return (
@@ -95,12 +90,14 @@ export const AddPaymentMethodForm = ({
         <PaymentMethodTypeSelect value={methodType} onValueChange={setMethodType} />
         <PaymentMethodNameInput />
         
-        <CardPaymentForm />
-        <MobileWalletForm />
-        <BankAccountForm />
+        <div className="bg-gray-800 p-4 rounded-lg">
+          <CardPaymentForm />
+          <MobileWalletForm />
+          <BankAccountForm />
+        </div>
         
         <div className="pt-2">
-          <Button type="submit" className="w-full rounded-full">
+          <Button type="submit" className="w-full rounded-full bg-yellow-500 hover:bg-yellow-600 text-black">
             Add Payment Method
           </Button>
         </div>
