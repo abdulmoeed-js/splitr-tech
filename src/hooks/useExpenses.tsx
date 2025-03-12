@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Friend, Expense, Split, FriendGroup, SettlementPayment, PaymentReminder } from "@/types/expense";
@@ -211,6 +210,48 @@ export const useExpenses = () => {
     });
   };
 
+  const handleRemoveFriend = (friendId: string) => {
+    // Don't allow removing yourself
+    if (friendId === "1") {
+      toast({
+        title: "Cannot Remove",
+        description: "You cannot remove yourself from friends list.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Check if friend has any associated expenses
+    const hasExpenses = expenses.some(exp => 
+      exp.paidBy === friendId || exp.splits.some(split => split.friendId === friendId)
+    );
+    
+    if (hasExpenses) {
+      toast({
+        title: "Cannot Remove Friend",
+        description: "This friend has associated expenses. Settle all expenses before removing.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Remove friend from any groups they're in
+    setGroups(prev => 
+      prev.map(group => ({
+        ...group,
+        members: group.members.filter(member => member.id !== friendId)
+      }))
+    );
+    
+    // Remove the friend
+    setFriends(prev => prev.filter(friend => friend.id !== friendId));
+    
+    toast({
+      title: "Friend Removed",
+      description: `${friends.find(f => f.id === friendId)?.name} has been removed from your friends list.`
+    });
+  };
+
   const handleAddGroup = (group: FriendGroup) => {
     setGroups(prev => [...prev, group]);
   };
@@ -293,6 +334,7 @@ export const useExpenses = () => {
     calculateBalances,
     handleAddExpense,
     handleAddFriend,
+    handleRemoveFriend,
     handleAddGroup,
     handleSelectGroup,
     handleSettleDebt,
@@ -300,4 +342,3 @@ export const useExpenses = () => {
     handleSettleReminder
   };
 };
-

@@ -8,6 +8,7 @@ import { AuthWrapper, SignInPage, SignUpPage } from "./components/AuthWrapper";
 import { Header } from "./components/Header";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
+import Friends from "./pages/Friends";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,10 @@ const App = () => (
                 <Profile />
               </AuthWrapper>
             } 
+          />
+          <Route 
+            path="/friends" 
+            element={<Friends />} 
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
