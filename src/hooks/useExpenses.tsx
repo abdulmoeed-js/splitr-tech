@@ -1,167 +1,42 @@
 
-import { useState, useEffect, useMemo, createContext, useContext } from 'react';
-import { Friend, Expense, Split, FriendGroup, SettlementPayment, PaymentReminder } from '@/types/expense';
-import { useSession } from '@/hooks/useSession';
-import { useExpenseData } from '@/hooks/useExpenseData';
-import { useGroups } from '@/hooks/useGroups';
-import { useFriends } from '@/hooks/useFriends';
-import { usePayments } from '@/hooks/usePayments';
-import { useReminders } from '@/hooks/useReminders';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import { PaymentMethod } from '@/types/payment';
+import React, { createContext, useContext, ReactNode } from "react";
+import { useSession } from "@/hooks/useSession";
+import { Expense, Split } from "@/types/expense";
+import { useExpenseData } from "@/hooks/useExpenseData";
 
-type ExpensesContextType = {
-  isLoaded: boolean;
-  friends: Friend[];
-  filteredFriends: Friend[];
+interface ExpensesContextType {
   expenses: Expense[];
-  filteredExpenses: Expense[];
-  groups: FriendGroup[];
-  selectedGroupId: string | null;
-  payments: SettlementPayment[];
-  reminders: PaymentReminder[];
-  paymentMethods: PaymentMethod[];
-  hasUnreadReminders: boolean;
-  handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[]) => void;
-  handleAddFriend: (name: string, email?: string, phone?: string) => void;
-  handleUpdateFriend: (friend: Partial<Friend> & { id: string }) => void;
-  handleInviteFriend: (email?: string, phone?: string) => void;
-  handleRemoveFriend: (friendId: string) => void;
-  handleAddGroup: (name: string, memberIds: string[]) => void;
-  handleSelectGroup: (groupId: string | null) => void;
-  handleSettleDebt: (payment: SettlementPayment) => void;
-  handleMarkReminderAsRead: (reminderId: string) => void;
-  handleSettleReminder: (reminder: PaymentReminder) => void;
-};
+  isExpensesLoading: boolean;
+  handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => void;
+}
 
-const ExpensesContext = createContext<ExpensesContextType | null>(null);
+const ExpensesContext = createContext<ExpensesContextType | undefined>(undefined);
 
-export const useExpenses = () => {
-  const context = useContext(ExpensesContext);
-  if (!context) {
-    throw new Error('useExpenses must be used within an ExpensesProvider');
-  }
-  return context;
-};
-
-export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  
-  const { session, user, isLoading: isAuthLoading } = useSession();
-  const userName = user?.user_metadata?.name || 'You';
-  
+export const ExpensesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { session } = useSession();
   const { 
     expenses, 
     isExpensesLoading,
-    addExpense 
+    addExpense: handleAddExpense
   } = useExpenseData(session);
-  
-  const { 
-    friends, 
-    isFriendsLoading,
-    handleAddFriend, 
-    handleUpdateFriend,
-    handleInviteFriend,
-    handleRemoveFriend 
-  } = useFriends(session, userName);
-  
-  const {
-    groups,
-    isGroupsLoading,
-    addGroup,
-  } = useGroups(session, friends);
-  
-  const {
-    payments,
-    isPaymentsLoading,
-    settleDebt
-  } = usePayments(session);
-  
-  const {
-    reminders,
-    hasUnreadReminders,
-    isRemindersLoading,
-    markReminderAsRead,
-    settleReminder
-  } = useReminders(session);
-  
-  const {
-    paymentMethods,
-    loading: isPaymentMethodsLoading
-  } = usePaymentMethods();
 
-  // Filter friends and expenses based on selected group
-  const filteredFriends = useMemo(() => {
-    if (!selectedGroupId) return friends;
-    const selectedGroup = groups.find(g => g.id === selectedGroupId);
-    if (!selectedGroup) return friends;
-    return friends.filter(f => 
-      selectedGroup.members.some(m => m.id === f.id)
-    );
-  }, [friends, groups, selectedGroupId]);
-
-  const filteredExpenses = useMemo(() => {
-    if (!selectedGroupId) return expenses;
-    return expenses.filter(e => e.groupId === selectedGroupId);
-  }, [expenses, selectedGroupId]);
-
-  useEffect(() => {
-    // Set loaded state once all data is loaded
-    if (!isAuthLoading && !isExpensesLoading && !isFriendsLoading && 
-        !isGroupsLoading && !isPaymentsLoading && !isRemindersLoading && 
-        !isPaymentMethodsLoading) {
-      setIsLoaded(true);
-    }
-  }, [
-    isAuthLoading, 
-    isExpensesLoading, 
-    isFriendsLoading, 
-    isGroupsLoading, 
-    isPaymentsLoading, 
-    isRemindersLoading,
-    isPaymentMethodsLoading
-  ]);
-
-  // Combine all the functionality
-  const contextValue = {
-    isLoaded,
-    friends,
-    filteredFriends,
+  const value = {
     expenses,
-    filteredExpenses,
-    groups,
-    selectedGroupId,
-    payments,
-    reminders,
-    paymentMethods,
-    hasUnreadReminders,
-    handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[]) => {
-      addExpense(description, amount, paidBy, splits);
-    },
-    handleAddFriend,
-    handleUpdateFriend,
-    handleInviteFriend,
-    handleRemoveFriend,
-    handleAddGroup: (name: string, memberIds: string[]) => {
-      addGroup(name, memberIds);
-    },
-    handleSelectGroup: setSelectedGroupId,
-    handleSettleDebt: (payment: SettlementPayment) => {
-      settleDebt(payment);
-    },
-    handleMarkReminderAsRead: (reminderId: string) => {
-      markReminderAsRead(reminderId);
-    },
-    handleSettleReminder: (reminder: PaymentReminder) => {
-      settleReminder(reminder);
-    }
+    isExpensesLoading,
+    handleAddExpense
   };
 
   return (
-    <ExpensesContext.Provider value={contextValue}>
+    <ExpensesContext.Provider value={value}>
       {children}
     </ExpensesContext.Provider>
   );
+};
+
+export const useExpenses = (): ExpensesContextType => {
+  const context = useContext(ExpensesContext);
+  if (context === undefined) {
+    throw new Error("useExpenses must be used within an ExpensesProvider");
+  }
+  return context;
 };

@@ -1,146 +1,145 @@
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AddExpenseDialog } from "@/components/AddExpenseDialog";
-import { ExpenseDashboard } from "@/components/expenses/ExpenseDashboard";
-import { BalanceSummary } from "@/components/BalanceSummary";
-import { FriendGroupList } from "@/components/groups/FriendGroupList";
-import { FriendGroupDialog } from "@/components/groups/FriendGroupDialog";
-import { GroupHeader } from "@/components/groups/GroupHeader";
-import { FriendsManagement } from "@/components/friends/FriendsManagement";
-import { ExpenseTabContent } from "@/components/expenses/ExpenseTabContent";
-import { RemindersList } from "@/components/settlements/RemindersList";
+import { useState, useEffect } from "react";
 import { useExpenses } from "@/hooks/useExpenses";
-import { useState } from "react";
+import { useSession } from "@/hooks/useSession";
+import { useFriends } from "@/hooks/useFriends";
+import { useGroups } from "@/hooks/useGroups";
+import { usePayments } from "@/hooks/usePayments";
+import { useReminders } from "@/hooks/useReminders";
+import { useBalanceCalculation } from "@/hooks/useBalanceCalculation";
+import { Friend, FriendGroup, Expense, PaymentReminder } from "@/types/expense";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BalanceSummary } from "@/components/BalanceSummary";
+import { ExpenseDashboard } from "@/components/expenses/ExpenseDashboard";
+import { ExpenseTabContent } from "@/components/expenses/ExpenseTabContent";
+import { FriendGroupList } from "@/components/groups/FriendGroupList";
+import { GroupHeader } from "@/components/groups/GroupHeader";
+import { AddExpenseDialog } from "@/components/AddExpenseDialog";
+import { SettlementDialog } from "@/components/settlements/SettlementDialog";
 
-export default function Index() {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  
-  const { 
-    isLoaded,
-    friends,
-    filteredFriends,
-    expenses,
-    filteredExpenses,
-    groups,
-    selectedGroupId,
-    payments,
-    reminders,
-    paymentMethods,
-    hasUnreadReminders,
-    handleAddExpense,
-    handleAddFriend,
-    handleUpdateFriend,
-    handleInviteFriend,
-    handleRemoveFriend,
-    handleAddGroup,
-    handleSelectGroup,
-    handleSettleDebt,
-    handleMarkReminderAsRead,
-    handleSettleReminder
-  } = useExpenses();
+export default function Home() {
+  const { session, userName } = useSession();
+  const { expenses, handleAddExpense } = useExpenses();
+  const { friends } = useFriends(session, userName);
+  const { groups, handleCreateGroup } = useGroups(session);
+  const { payments, handleAddPayment } = usePayments(session);
+  const { reminders, handleMarkReminderAsRead, handleSettleReminder } = useReminders(session);
+  const { calculateBalances, getFilteredExpenses } = useBalanceCalculation();
 
-  // Get selected group name
-  const selectedGroupName = selectedGroupId 
-    ? groups.find(g => g.id === selectedGroupId)?.name 
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isSettlementOpen, setIsSettlementOpen] = useState(false);
+  const [selectedReminder, setSelectedReminder] = useState<PaymentReminder | null>(null);
+
+  // Filter expenses and friends based on selected group
+  const filteredExpenses = getFilteredExpenses(expenses, selectedGroupId);
+  const filteredFriends = selectedGroupId
+    ? groups.find(g => g.id === selectedGroupId)?.members || []
+    : friends;
+
+  // Calculate balances for the current view
+  const balances = calculateBalances(filteredExpenses, filteredFriends);
+
+  // Handle adding a new expense
+  const handleAddNewExpense = (description: string, amount: number, paidBy: string, splits: any[]) => {
+    handleAddExpense(description, amount, paidBy, splits, selectedGroupId || undefined);
+    setIsAddExpenseOpen(false);
+  };
+
+  // Handle settling up
+  const openSettlementDialog = (reminder: PaymentReminder) => {
+    setSelectedReminder(reminder);
+    setIsSettlementOpen(true);
+  };
+
+  const handleSettleUp = (paymentMethod: string, amount: number) => {
+    if (selectedReminder) {
+      handleSettleReminder(selectedReminder);
+    }
+    setIsSettlementOpen(false);
+    setSelectedReminder(null);
+  };
+
+  const selectedGroup = selectedGroupId
+    ? groups.find(g => g.id === selectedGroupId)
     : null;
 
   return (
-    <div className="container mx-auto py-6 max-w-6xl">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="p-4 glass-panel">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Groups</h2>
-              <FriendGroupDialog 
-                friends={friends}
-                onAddGroup={handleAddGroup}
-              />
-            </div>
-            <FriendGroupList
-              groups={groups}
-              onSelectGroup={handleSelectGroup}
-              selectedGroupId={selectedGroupId}
-            />
-          </Card>
-          
-          <div className="block lg:hidden">
-            <FriendsManagement 
-              friends={filteredFriends}
-              onAddFriend={handleAddFriend}
-              onUpdateFriend={handleUpdateFriend}
-              onInviteFriend={handleInviteFriend}
-              onRemoveFriend={handleRemoveFriend}
-            />
-          </div>
-          
-          {reminders.length > 0 && (
-            <div className="block lg:hidden">
-              <Card className="p-4 glass-panel overflow-hidden">
-                <h2 className="text-xl font-semibold mb-4">Payment Reminders</h2>
-                <RemindersList 
-                  reminders={reminders}
-                  friends={friends}
-                  onMarkAsRead={handleMarkReminderAsRead}
-                  onSettleReminder={handleSettleReminder}
-                />
-              </Card>
-            </div>
-          )}
+    <div className="container px-4 py-8 mx-auto max-w-7xl">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+        {/* Left sidebar - Group selection */}
+        <div className="md:col-span-1">
+          <h2 className="mb-4 text-xl font-semibold">Friend Groups</h2>
+          <FriendGroupList
+            groups={groups}
+            onSelectGroup={setSelectedGroupId}
+            selectedGroupId={selectedGroupId}
+          />
         </div>
-        
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <GroupHeader
-              selectedGroupName={selectedGroupName}
-              onClearSelection={() => handleSelectGroup(null)}
-            />
-            
-            <div className="flex gap-2">
-              <AddExpenseDialog 
-                friends={filteredFriends}
-                onAddExpense={handleAddExpense}
-                groupId={selectedGroupId}
-              />
-            </div>
-          </div>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2">
+
+        {/* Main content area */}
+        <div className="md:col-span-3">
+          {/* Group header with actions */}
+          <GroupHeader
+            selectedGroupId={selectedGroupId}
+            onClearSelection={() => setSelectedGroupId(null)}
+            handleCreateGroup={handleCreateGroup}
+            friends={friends}
+            groups={groups}
+          />
+
+          {/* Add expense dialog */}
+          <AddExpenseDialog
+            isOpen={isAddExpenseOpen}
+            onClose={() => setIsAddExpenseOpen(false)}
+            onAddExpense={handleAddNewExpense}
+            friends={filteredFriends}
+          />
+
+          {/* Settlement dialog */}
+          <SettlementDialog
+            isOpen={isSettlementOpen}
+            onClose={() => setIsSettlementOpen(false)}
+            onSettle={handleSettleUp}
+            reminder={selectedReminder}
+          />
+
+          {/* Balance summary */}
+          <BalanceSummary
+            balances={balances}
+            onAddExpense={() => setIsAddExpenseOpen(true)}
+          />
+
+          {/* Main content tabs */}
+          <Tabs defaultValue="dashboard" className="mt-6">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="expenses" className="relative">
-                Expenses
-                {hasUnreadReminders && (
-                  <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
-                )}
-              </TabsTrigger>
+              <TabsTrigger value="expenses">Expenses & Reminders</TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="dashboard" className="space-y-6 mt-6">
-              <ExpenseDashboard 
-                expenses={filteredExpenses}
-                friends={filteredFriends}
-              />
-              
-              <BalanceSummary 
+
+            <TabsContent value="dashboard" className="mt-4">
+              <ExpenseDashboard
                 expenses={filteredExpenses}
                 friends={filteredFriends}
                 payments={payments}
-                paymentMethods={paymentMethods}
-                onSettleDebt={handleSettleDebt}
+                reminders={reminders}
+                balances={balances}
+                onAddExpense={() => setIsAddExpenseOpen(true)}
+                onSettleUp={openSettlementDialog}
+                filteredExpenses={filteredExpenses}
+                filteredFriends={filteredFriends}
+                selectedGroupId={selectedGroupId}
               />
             </TabsContent>
-            
-            <TabsContent value="expenses" className="mt-6">
-              <ExpenseTabContent 
+
+            <TabsContent value="expenses" className="mt-4">
+              <ExpenseTabContent
                 expenses={filteredExpenses}
                 friends={filteredFriends}
                 reminders={reminders}
                 onMarkReminderAsRead={handleMarkReminderAsRead}
-                onSettleReminder={handleSettleReminder}
+                onSettleReminder={openSettlementDialog}
+                payments={payments}
               />
             </TabsContent>
           </Tabs>

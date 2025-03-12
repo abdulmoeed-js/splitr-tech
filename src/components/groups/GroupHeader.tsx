@@ -1,37 +1,63 @@
 
-import { FriendGroup, Friend } from "@/types/expense";
+import { Button } from "@/components/ui/button";
 import { FriendGroupDialog } from "@/components/groups/FriendGroupDialog";
-import { FriendGroupList } from "@/components/groups/FriendGroupList";
+import { Friend, FriendGroup } from "@/types/expense";
+import { useState } from "react";
+import { Users } from "lucide-react";
 
-interface GroupHeaderProps {
-  groups: FriendGroup[];
-  friends: Friend[];
-  selectedGroupId: string | null;
-  onAddGroup: (group: FriendGroup) => void;
-  onSelectGroup: (groupId: string | null) => void;
+export interface GroupHeaderProps {
+  selectedGroupId?: string | null;
+  onClearSelection?: () => void;
+  handleCreateGroup?: (name: string, memberIds: string[]) => void;
+  friends?: Friend[];
+  groups?: FriendGroup[];
 }
 
-export const GroupHeader = ({ 
-  groups, 
-  friends,
+export const GroupHeader = ({
   selectedGroupId,
-  onAddGroup,
-  onSelectGroup 
+  onClearSelection,
+  handleCreateGroup,
+  friends = [],
+  groups = [],
 }: GroupHeaderProps) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const selectedGroup = selectedGroupId 
+    ? groups.find(g => g.id === selectedGroupId) 
+    : null;
+
+  const handleAddGroup = (name: string, memberIds: string[]) => {
+    if (handleCreateGroup) {
+      handleCreateGroup(name, memberIds);
+    }
+    setIsDialogOpen(false);
+  };
+
   return (
-    <div className="mb-6">
-      <div className="flex justify-between items-center mb-3">
-        <h2 className="text-xl font-semibold">Friend Groups</h2>
-        <FriendGroupDialog 
-          friends={friends}
-          groups={groups}
-          onAddGroup={onAddGroup}
-        />
+    <div className="flex justify-between items-center mb-4">
+      <div className="flex items-center gap-2">
+        <Users className="h-5 w-5" />
+        <h2 className="text-xl font-semibold">
+          {selectedGroup ? selectedGroup.name : "All Friends"}
+        </h2>
       </div>
-      <FriendGroupList 
-        groups={groups}
-        onSelectGroup={onSelectGroup}
-        selectedGroupId={selectedGroupId}
+      
+      <div className="flex gap-2">
+        {selectedGroupId && onClearSelection && (
+          <Button variant="outline" size="sm" onClick={onClearSelection}>
+            View All
+          </Button>
+        )}
+        
+        <Button size="sm" onClick={() => setIsDialogOpen(true)}>
+          Create Group
+        </Button>
+      </div>
+
+      <FriendGroupDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onSave={handleAddGroup}
+        friends={friends}
       />
     </div>
   );
