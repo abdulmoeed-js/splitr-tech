@@ -37,8 +37,8 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 border-b">
       <div className="container max-w-2xl py-4 px-4 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-          Split Buddy
+        <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          Splitr
         </Link>
         
         <div className="flex items-center gap-4">

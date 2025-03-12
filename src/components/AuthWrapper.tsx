@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,8 +98,8 @@ export const SignInPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
-      <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-        Split Buddy
+      <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+        Splitr
       </h1>
       <div className="glass-panel w-full max-w-md p-8">
         <h2 className="text-2xl font-bold text-primary mb-6">Sign In</h2>
@@ -214,8 +213,8 @@ export const SignUpPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
-      <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-        Split Buddy
+      <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+        Splitr
       </h1>
       <div className="glass-panel w-full max-w-md p-8">
         <h2 className="text-2xl font-bold text-primary mb-6">Create Account</h2>

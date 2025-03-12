@@ -28,8 +28,8 @@ const Index = () => {
 
   return (
     <div className="container max-w-2xl py-8 px-4">
-      <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-        Split Buddy
+      <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+        Splitr
       </h1>
       <p className="text-center text-muted-foreground mb-8">
         Track expenses and settle up with friends
