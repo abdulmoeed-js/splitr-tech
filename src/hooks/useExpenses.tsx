@@ -1,104 +1,130 @@
 
-import { useState, useEffect } from "react";
-import { useSession } from "./useSession";
-import { useFriends } from "./useFriends";
-import { useExpenseData } from "./useExpenseData";
-import { useGroups } from "./useGroups";
-import { usePayments } from "./usePayments";
-import { useReminders } from "./useReminders";
-import { useBalanceCalculation } from "./useBalanceCalculation";
-import { usePaymentMethods } from "./usePaymentMethods";
-import { PaymentReminder, SettlementPayment } from "@/types/expense";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useMemo, createContext, useContext } from 'react';
+import { Friend, Expense, Split, FriendGroup, SettlementPayment, PaymentReminder } from '@/types/expense';
+import { useSession } from '@/hooks/useSession';
+import { useExpenseData } from '@/hooks/useExpenseData';
+import { useGroups } from '@/hooks/useGroups';
+import { useFriends } from '@/hooks/useFriends';
+import { usePayments } from '@/hooks/usePayments';
+import { useReminders } from '@/hooks/useReminders';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import { PaymentMethod } from '@/types/payment';
+
+type ExpensesContextType = {
+  isLoaded: boolean;
+  friends: Friend[];
+  filteredFriends: Friend[];
+  expenses: Expense[];
+  filteredExpenses: Expense[];
+  groups: FriendGroup[];
+  selectedGroupId: string | null;
+  payments: SettlementPayment[];
+  reminders: PaymentReminder[];
+  paymentMethods: PaymentMethod[];
+  hasUnreadReminders: boolean;
+  handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[]) => void;
+  handleAddFriend: (name: string, email?: string, phone?: string) => void;
+  handleUpdateFriend: (friend: Partial<Friend> & { id: string }) => void;
+  handleInviteFriend: (email?: string, phone?: string) => void;
+  handleRemoveFriend: (friendId: string) => void;
+  handleAddGroup: (name: string, memberIds: string[]) => void;
+  handleSelectGroup: (groupId: string | null) => void;
+  handleSettleDebt: (payment: SettlementPayment) => void;
+  handleMarkReminderAsRead: (reminderId: string) => void;
+  handleSettleReminder: (reminder: PaymentReminder) => void;
+};
+
+const ExpensesContext = createContext<ExpensesContextType | null>(null);
 
 export const useExpenses = () => {
-  const { session, userName, isSessionLoaded, setSessionLoaded } = useSession();
-  const queryClient = useQueryClient();
+  const context = useContext(ExpensesContext);
+  if (!context) {
+    throw new Error('useExpenses must be used within an ExpensesProvider');
+  }
+  return context;
+};
+
+export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  
+  const { session, user, isLoading: isAuthLoading } = useSession();
+  const userName = user?.user_metadata?.name || 'You';
+  
+  const { 
+    expenses, 
+    isLoading: isExpensesLoading,
+    addExpense 
+  } = useExpenseData(session);
+  
+  const { 
+    friends, 
+    isFriendsLoading,
+    handleAddFriend, 
+    handleUpdateFriend,
+    handleInviteFriend,
+    handleRemoveFriend 
+  } = useFriends(session, userName);
+  
+  const {
+    groups,
+    isLoading: isGroupsLoading,
+    addGroup,
+  } = useGroups(session, friends);
+  
+  const {
+    payments,
+    isLoading: isPaymentsLoading,
+    settleDebt
+  } = usePayments(session);
+  
+  const {
+    reminders,
+    hasUnreadReminders,
+    isLoading: isRemindersLoading,
+    markReminderAsRead,
+    settleReminder
+  } = useReminders(session);
+  
+  const {
+    paymentMethods,
+    loading: isPaymentMethodsLoading
+  } = usePaymentMethods();
 
-  const { friends, isFriendsLoading, handleAddFriend, handleRemoveFriend } = useFriends(session, userName);
-  const { expenses, isExpensesLoading, handleAddExpense } = useExpenseData(session);
-  const { groups, isGroupsLoading, selectedGroupId, handleSelectGroup, handleAddGroup } = useGroups(session, friends);
-  const { payments, isPaymentsLoading, handleSettleDebt } = usePayments(session);
-  const { reminders, isRemindersLoading, hasUnreadReminders, handleMarkReminderAsRead, handleSettleReminder, createReminder } = useReminders(session, friends);
-  const { calculateBalances } = useBalanceCalculation(friends, expenses, payments);
-  const { paymentMethods } = usePaymentMethods();
-
-  // Track if the data is loaded
-  useEffect(() => {
-    const isDataLoaded = !session || (
-      !isFriendsLoading && 
-      !isExpensesLoading && 
-      !isGroupsLoading && 
-      !isPaymentsLoading && 
-      !isRemindersLoading
+  // Filter friends and expenses based on selected group
+  const filteredFriends = useMemo(() => {
+    if (!selectedGroupId) return friends;
+    const selectedGroup = groups.find(g => g.id === selectedGroupId);
+    if (!selectedGroup) return friends;
+    return friends.filter(f => 
+      selectedGroup.members.some(m => m.id === f.id)
     );
-    
-    if (isDataLoaded) {
+  }, [friends, groups, selectedGroupId]);
+
+  const filteredExpenses = useMemo(() => {
+    if (!selectedGroupId) return expenses;
+    return expenses.filter(e => e.groupId === selectedGroupId);
+  }, [expenses, selectedGroupId]);
+
+  useEffect(() => {
+    // Set loaded state once all data is loaded
+    if (!isAuthLoading && !isExpensesLoading && !isFriendsLoading && 
+        !isGroupsLoading && !isPaymentsLoading && !isRemindersLoading && 
+        !isPaymentMethodsLoading) {
       setIsLoaded(true);
     }
   }, [
-    session, 
-    isFriendsLoading, 
+    isAuthLoading, 
     isExpensesLoading, 
+    isFriendsLoading, 
     isGroupsLoading, 
     isPaymentsLoading, 
-    isRemindersLoading
+    isRemindersLoading,
+    isPaymentMethodsLoading
   ]);
 
-  // Filter friends based on selected group
-  const filteredFriends = selectedGroupId
-    ? groups.find(g => g.id === selectedGroupId)?.members || friends
-    : friends;
-
-  // Filter expenses based on selected group
-  const filteredExpenses = selectedGroupId
-    ? expenses.filter(expense => expense.groupId === selectedGroupId)
-    : expenses;
-
-  // Create reminders from balances
-  useEffect(() => {
-    if (!session?.user || expenses.length === 0 || reminders.length > 0) {
-      return;
-    }
-
-    const balances = calculateBalances();
-    const newReminders: PaymentReminder[] = [];
-    
-    Object.entries(balances).forEach(([fromId, friendBalances]) => {
-      Object.entries(friendBalances).forEach(([toId, amount]) => {
-        if (amount > 0) {
-          // Set due date to 1 month from now
-          const dueDate = new Date();
-          dueDate.setMonth(dueDate.getMonth() + 1);
-          
-          newReminders.push({
-            id: '', // Will be set by database
-            fromFriendId: fromId,
-            toFriendId: toId,
-            amount: amount,
-            dueDate,
-            isRead: false,
-            isPaid: false
-          });
-        }
-      });
-    });
-    
-    // Create the reminders in batch
-    if (newReminders.length > 0) {
-      newReminders.forEach(reminder => {
-        createReminder({
-          fromFriendId: reminder.fromFriendId,
-          toFriendId: reminder.toFriendId,
-          amount: reminder.amount,
-          dueDate: reminder.dueDate
-        });
-      });
-    }
-  }, [session, expenses, reminders.length, createReminder]);
-
-  return {
+  // Combine all the functionality
+  const contextValue = {
     isLoaded,
     friends,
     filteredFriends,
@@ -110,33 +136,21 @@ export const useExpenses = () => {
     reminders,
     paymentMethods,
     hasUnreadReminders,
-    calculateBalances,
-    handleAddExpense: (description: string, amount: number, paidBy: string, splits: any[]) => {
-      handleAddExpense(description, amount, paidBy, splits, selectedGroupId);
-    },
+    handleAddExpense: addExpense,
     handleAddFriend,
+    handleUpdateFriend,
+    handleInviteFriend,
     handleRemoveFriend,
-    handleAddGroup,
-    handleSelectGroup,
-    handleSettleDebt,
-    handleMarkReminderAsRead,
-    handleSettleReminder: (reminder: PaymentReminder) => {
-      // Create a payment from the reminder
-      const payment: SettlementPayment = {
-        id: Date.now().toString(),
-        fromFriendId: reminder.fromFriendId,
-        toFriendId: reminder.toFriendId,
-        amount: reminder.amount,
-        date: new Date(),
-        status: "completed",
-        method: "in-app",
-        receiptUrl: `receipt-${Date.now()}.pdf` // Simulated receipt URL
-      };
-      
-      handleSettleDebt(payment);
-      
-      // Mark the reminder as paid
-      handleSettleReminder(reminder);
-    }
+    handleAddGroup: addGroup,
+    handleSelectGroup: setSelectedGroupId,
+    handleSettleDebt: settleDebt,
+    handleMarkReminderAsRead: markReminderAsRead,
+    handleSettleReminder: settleReminder
   };
+
+  return (
+    <ExpensesContext.Provider value={contextValue}>
+      {children}
+    </ExpensesContext.Provider>
+  );
 };

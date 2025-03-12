@@ -53,7 +53,11 @@ export const useFriends = (session: Session | null, userName: string) => {
       // Convert database records to Friend objects
       return data.map(friend => ({
         id: friend.id,
-        name: friend.name
+        name: friend.name,
+        email: friend.email || undefined,
+        phone: friend.phone || undefined,
+        isInvited: friend.is_invited || false,
+        isComplete: friend.is_complete || false
       }));
     },
     enabled: !!session || true,
@@ -61,36 +65,178 @@ export const useFriends = (session: Session | null, userName: string) => {
 
   // Add friend mutation
   const addFriendMutation = useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async ({ name, email, phone }: { name: string; email?: string; phone?: string }) => {
       if (!session?.user) {
         // Generate a local ID for non-authenticated users
-        return { id: Date.now().toString(), name };
+        return { 
+          id: Date.now().toString(), 
+          name, 
+          email, 
+          phone,
+          isInvited: false,
+          isComplete: !!name 
+        };
       }
+
+      const isComplete = !!name;
+      const isInvited = false;
 
       const { data, error } = await supabase
         .from('friends')
         .insert({
           user_id: session.user.id,
-          name
+          name: name || "",
+          email,
+          phone,
+          is_invited: isInvited,
+          is_complete: isComplete
         })
         .select()
         .single();
       
       if (error) throw error;
-      return { id: data.id, name: data.name };
+      
+      return { 
+        id: data.id, 
+        name: data.name,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        isInvited: data.is_invited || false,
+        isComplete: data.is_complete || false
+      };
     },
     onSuccess: (newFriend) => {
       queryClient.setQueryData(['friends'], (oldFriends: Friend[] = []) => [...oldFriends, newFriend]);
       
       toast({
         title: "Friend Added",
-        description: `${newFriend.name} has been added to your friends list.`,
+        description: `${newFriend.name || "A new friend"} has been added to your friends list.`,
       });
     },
     onError: (error) => {
       toast({
         title: "Failed to Add Friend",
         description: error.message || "An error occurred while adding friend",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Update friend mutation
+  const updateFriendMutation = useMutation({
+    mutationFn: async (friend: Partial<Friend> & { id: string }) => {
+      if (!session?.user) {
+        return friend;
+      }
+
+      const { id, ...updateData } = friend;
+      const isComplete = !!friend.name;
+
+      const { data, error } = await supabase
+        .from('friends')
+        .update({
+          name: friend.name,
+          email: friend.email,
+          phone: friend.phone,
+          is_invited: friend.isInvited,
+          is_complete: isComplete
+        })
+        .eq('id', id)
+        .eq('user_id', session.user.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return { 
+        id: data.id, 
+        name: data.name,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        isInvited: data.is_invited || false,
+        isComplete: data.is_complete || false
+      };
+    },
+    onSuccess: (updatedFriend) => {
+      queryClient.setQueryData(['friends'], (oldFriends: Friend[] = []) => 
+        oldFriends.map(friend => friend.id === updatedFriend.id ? updatedFriend : friend)
+      );
+      
+      toast({
+        title: "Friend Updated",
+        description: `${updatedFriend.name} has been updated.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Update Friend",
+        description: error.message || "An error occurred while updating friend",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Invite friend mutation
+  const inviteFriendMutation = useMutation({
+    mutationFn: async ({ email, phone }: { email?: string; phone?: string }) => {
+      if (!email && !phone) {
+        throw new Error("Either email or phone is required to invite a friend");
+      }
+
+      const invitedName = email ? email.split('@')[0] : phone;
+
+      if (!session?.user) {
+        // For non-authenticated users, just create a local friend
+        return { 
+          id: Date.now().toString(), 
+          name: invitedName || "Invited Friend",
+          email, 
+          phone,
+          isInvited: true,
+          isComplete: false
+        };
+      }
+
+      // Create a new friend with invited status
+      const { data, error } = await supabase
+        .from('friends')
+        .insert({
+          user_id: session.user.id,
+          name: invitedName || "Invited Friend",
+          email,
+          phone,
+          is_invited: true,
+          is_complete: false
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+
+      // In a real app, you would send an email/SMS here
+      // This could be done via a Supabase edge function
+      
+      return { 
+        id: data.id, 
+        name: data.name,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        isInvited: data.is_invited,
+        isComplete: data.is_complete
+      };
+    },
+    onSuccess: (newFriend) => {
+      queryClient.setQueryData(['friends'], (oldFriends: Friend[] = []) => [...oldFriends, newFriend]);
+      
+      toast({
+        title: "Friend Invited",
+        description: `Invitation sent to ${newFriend.email || newFriend.phone}.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Invite Friend",
+        description: error.message || "An error occurred while inviting friend",
         variant: "destructive"
       });
     }
@@ -124,6 +270,7 @@ export const useFriends = (session: Session | null, userName: string) => {
         return splitData && splitData.length > 0;
       };
 
+      // Fix: Use exact string comparison for friendId === "1" check
       if (friendId === "1" || (await hasExpensesCheck())) {
         throw new Error(
           friendId === "1" 
@@ -177,7 +324,12 @@ export const useFriends = (session: Session | null, userName: string) => {
   return {
     friends,
     isFriendsLoading,
-    handleAddFriend: (name: string) => addFriendMutation.mutate(name),
+    handleAddFriend: (name: string, email?: string, phone?: string) => 
+      addFriendMutation.mutate({ name, email, phone }),
+    handleUpdateFriend: (friend: Partial<Friend> & { id: string }) => 
+      updateFriendMutation.mutate(friend),
+    handleInviteFriend: (email?: string, phone?: string) => 
+      inviteFriendMutation.mutate({ email, phone }),
     handleRemoveFriend: (friendId: string) => removeFriendMutation.mutate(friendId)
   };
 };

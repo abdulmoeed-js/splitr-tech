@@ -2,6 +2,10 @@
 export interface Friend {
   id: string;
   name: string;
+  email?: string;
+  phone?: string;
+  isInvited?: boolean;
+  isComplete?: boolean;
 }
 
 export interface Split {
@@ -14,17 +18,16 @@ export interface Expense {
   id: string;
   description: string;
   amount: number;
-  paidBy: string;
   date: Date;
-  splits: Split[];
+  paidBy: string;
   groupId?: string;
+  splits: Split[];
 }
 
 export interface FriendGroup {
   id: string;
   name: string;
   members: Friend[];
-  createdAt: Date;
 }
 
 export interface SettlementPayment {
@@ -33,10 +36,7 @@ export interface SettlementPayment {
   toFriendId: string;
   amount: number;
   date: Date;
-  status: "pending" | "completed";
-  method: "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank";
-  paymentMethodId?: string;
-  receiptUrl?: string;
+  status: 'pending' | 'completed';
 }
 
 export interface PaymentReminder {

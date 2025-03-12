@@ -8,6 +8,8 @@ const Friends = () => {
     isLoaded,
     friends,
     handleAddFriend,
+    handleUpdateFriend,
+    handleInviteFriend,
     handleRemoveFriend
   } = useExpenses();
 
@@ -22,6 +24,8 @@ const Friends = () => {
           <FriendsManagement
             friends={friends}
             onAddFriend={handleAddFriend}
+            onUpdateFriend={handleUpdateFriend}
+            onInviteFriend={handleInviteFriend}
             onRemoveFriend={handleRemoveFriend}
           />
         )}

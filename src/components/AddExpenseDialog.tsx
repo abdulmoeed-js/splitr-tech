@@ -1,31 +1,44 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, User, Divide, Percent } from "lucide-react";
+import { Plus, User, Divide, Percent, Mail, Phone } from "lucide-react";
 import { Friend, Split } from "@/types/expense";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface AddExpenseDialogProps {
   friends: Friend[];
   onAddExpense: (description: string, amount: number, paidBy: string, splits: Split[]) => void;
-  onAddFriend: (name: string) => void;
+  onAddFriend: (name: string, email?: string, phone?: string) => void;
+  onInviteFriend: (email?: string, phone?: string) => void;
 }
 
-export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpenseDialogProps) => {
+export const AddExpenseDialog = ({ 
+  friends, 
+  onAddExpense, 
+  onAddFriend,
+  onInviteFriend 
+}: AddExpenseDialogProps) => {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState("");
   const [open, setOpen] = useState(false);
-  const [newFriendName, setNewFriendName] = useState("");
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [splitType, setSplitType] = useState("equal");
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [customSplits, setCustomSplits] = useState<Record<string, string>>({});
   const [percentageSplits, setPercentageSplits] = useState<Record<string, string>>({});
+  
+  // Friend adding states
+  const [addFriendTab, setAddFriendTab] = useState<"quick" | "detailed" | "invite">("quick");
+  const [newFriendName, setNewFriendName] = useState("");
+  const [newFriendEmail, setNewFriendEmail] = useState("");
+  const [newFriendPhone, setNewFriendPhone] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
 
   // Initialize splits when amount changes or when friends selection changes
   useEffect(() => {
@@ -167,11 +180,29 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
     setOpen(false);
   };
 
-  const handleAddFriend = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleQuickAddFriend = () => {
     if (newFriendName.trim()) {
-      onAddFriend(newFriendName.trim());
+      onAddFriend(newFriendName.trim(), undefined, undefined);
       setNewFriendName("");
+      setShowAddFriend(false);
+    }
+  };
+
+  const handleDetailedAddFriend = () => {
+    if (newFriendName.trim()) {
+      onAddFriend(newFriendName.trim(), newFriendEmail, newFriendPhone);
+      setNewFriendName("");
+      setNewFriendEmail("");
+      setNewFriendPhone("");
+      setShowAddFriend(false);
+    }
+  };
+
+  const handleInviteFriend = () => {
+    if (inviteEmail || invitePhone) {
+      onInviteFriend(inviteEmail, invitePhone);
+      setInviteEmail("");
+      setInvitePhone("");
       setShowAddFriend(false);
     }
   };
@@ -230,20 +261,108 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
             </div>
             
             {showAddFriend ? (
-              <div className="flex space-x-2 my-2">
-                <Input
-                  value={newFriendName}
-                  onChange={(e) => setNewFriendName(e.target.value)}
-                  placeholder="Friend's name"
-                  className="flex-1"
-                />
-                <Button 
-                  type="button" 
-                  onClick={handleAddFriend}
-                  size="sm"
-                >
-                  Add
-                </Button>
+              <div className="bg-background/30 border rounded-md p-3 space-y-3">
+                <Tabs defaultValue="quick" onValueChange={(value) => setAddFriendTab(value as any)}>
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="quick">Quick Add</TabsTrigger>
+                    <TabsTrigger value="detailed">Detailed</TabsTrigger>
+                    <TabsTrigger value="invite">Invite</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="quick" className="space-y-2 mt-2">
+                    <Input
+                      value={newFriendName}
+                      onChange={(e) => setNewFriendName(e.target.value)}
+                      placeholder="Friend's name"
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={handleQuickAddFriend}
+                      size="sm"
+                      className="w-full"
+                      disabled={!newFriendName.trim()}
+                    >
+                      Add Friend
+                    </Button>
+                  </TabsContent>
+                  
+                  <TabsContent value="detailed" className="space-y-2 mt-2">
+                    <Input
+                      value={newFriendName}
+                      onChange={(e) => setNewFriendName(e.target.value)}
+                      placeholder="Friend's name"
+                      className="mb-2"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        value={newFriendEmail}
+                        onChange={(e) => setNewFriendEmail(e.target.value)}
+                        placeholder="Email"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="tel"
+                        value={newFriendPhone}
+                        onChange={(e) => setNewFriendPhone(e.target.value)}
+                        placeholder="Phone"
+                      />
+                    </div>
+                    <Button 
+                      type="button" 
+                      onClick={handleDetailedAddFriend}
+                      size="sm"
+                      className="w-full"
+                      disabled={!newFriendName.trim()}
+                    >
+                      Add Friend
+                    </Button>
+                  </TabsContent>
+                  
+                  <TabsContent value="invite" className="space-y-2 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="Email"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="tel"
+                        value={invitePhone}
+                        onChange={(e) => setInvitePhone(e.target.value)}
+                        placeholder="Phone"
+                      />
+                    </div>
+                    <Button 
+                      type="button" 
+                      onClick={handleInviteFriend}
+                      size="sm"
+                      className="w-full"
+                      disabled={!inviteEmail && !invitePhone}
+                    >
+                      Invite Friend
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+                
+                <div className="flex justify-end">
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowAddFriend(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             ) : (
               <Select value={paidBy} onValueChange={setPaidBy} required>
@@ -302,8 +421,13 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
                       checked={selectedFriends.length === 0 || selectedFriends.includes(friend.id)}
                       onCheckedChange={() => handleFriendSelection(friend.id)}
                     />
-                    <Label htmlFor={`friend-${friend.id}`} className="cursor-pointer">
+                    <Label htmlFor={`friend-${friend.id}`} className="cursor-pointer flex items-center">
                       {friend.name}
+                      {friend.isInvited && !friend.isComplete && (
+                        <span className="ml-2 text-xs text-yellow-500">
+                          (Invited)
+                        </span>
+                      )}
                     </Label>
                   </div>
 
@@ -365,5 +489,3 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
         </form>
       </DialogContent>
     </Dialog>
-  );
-};

@@ -19,6 +19,7 @@ const Index = () => {
     hasUnreadReminders,
     handleAddExpense,
     handleAddFriend,
+    handleInviteFriend,
     handleAddGroup,
     handleSelectGroup,
     handleSettleDebt,
@@ -66,7 +67,8 @@ const Index = () => {
           <AddExpenseDialog 
             friends={filteredFriends} 
             onAddExpense={handleAddExpense} 
-            onAddFriend={handleAddFriend} 
+            onAddFriend={handleAddFriend}
+            onInviteFriend={handleInviteFriend}
           />
         </>
       )}
