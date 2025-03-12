@@ -1,10 +1,10 @@
 
-import { User as ClerkUser } from "@clerk/clerk-react";
+import { UserResource } from "@clerk/clerk-react";
 import { Card } from "@/components/ui/card";
 import { User } from "lucide-react";
 
 interface UserProfileCardProps {
-  user: ClerkUser;
+  user: UserResource;
 }
 
 export const UserProfileCard = ({ user }: UserProfileCardProps) => {

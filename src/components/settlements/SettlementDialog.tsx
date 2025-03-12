@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Friend, SettlementPayment, PaymentMethod } from "@/types/expense";
+import { Friend, SettlementPayment } from "@/types/expense";
+import { PaymentMethod } from "@/types/payment";
 import { toast } from "@/components/ui/use-toast";
 import { CreditCard, Wallet, ArrowRight } from "lucide-react";
 
