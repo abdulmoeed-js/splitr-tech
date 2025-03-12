@@ -1,11 +1,14 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PaymentMethod } from "@/types/payment";
 import { toast } from "@/components/ui/use-toast";
+import { PaymentFormProvider } from "./PaymentFormContext";
+import { PaymentMethodTypeSelect } from "./payment-methods/PaymentMethodTypeSelect";
+import { PaymentMethodNameInput } from "./payment-methods/PaymentMethodNameInput";
+import { CardPaymentForm } from "./payment-methods/CardPaymentForm";
+import { MobileWalletForm } from "./payment-methods/MobileWalletForm";
+import { BankAccountForm } from "./payment-methods/BankAccountForm";
 
 interface AddPaymentMethodFormProps {
   onAddPaymentMethod: (paymentMethod: PaymentMethod) => void;
@@ -19,25 +22,19 @@ export const AddPaymentMethodForm = ({
   const [methodType, setMethodType] = useState<string>("card");
   const [methodName, setMethodName] = useState("");
   
-  // Card details
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCVC, setCardCVC] = useState("");
-  
-  // Mobile wallet details
-  const [phoneNumber, setPhoneNumber] = useState("");
-  
-  // Bank details
-  const [bankName, setBankName] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Get form elements
+    const form = e.target as HTMLFormElement;
     
     let newMethod: PaymentMethod;
     
     switch (methodType) {
       case "card":
+        const cardNumber = (form.querySelector('#cardNumber') as HTMLInputElement).value;
+        const cardExpiry = (form.querySelector('#cardExpiry') as HTMLInputElement).value;
+        
         newMethod = {
           id: Date.now().toString(),
           type: "card",
@@ -46,8 +43,11 @@ export const AddPaymentMethodForm = ({
           expiryDate: cardExpiry
         };
         break;
+        
       case "easypaisa":
       case "jazzcash":
+        const phoneNumber = (form.querySelector('#phoneNumber') as HTMLInputElement).value;
+        
         newMethod = {
           id: Date.now().toString(),
           type: methodType as "easypaisa" | "jazzcash",
@@ -55,7 +55,12 @@ export const AddPaymentMethodForm = ({
           phoneNumber
         };
         break;
+        
       case "bank":
+        const bankNameSelect = form.querySelector('[id^="bankName"]') as HTMLSelectElement;
+        const bankName = bankNameSelect ? bankNameSelect.value : '';
+        const accountNumber = (form.querySelector('#accountNumber') as HTMLInputElement).value;
+        
         newMethod = {
           id: Date.now().toString(),
           type: "bank",
@@ -64,6 +69,7 @@ export const AddPaymentMethodForm = ({
           accountNumber
         };
         break;
+        
       default:
         return;
     }
@@ -78,146 +84,27 @@ export const AddPaymentMethodForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-      <div className="space-y-2">
-        <Label htmlFor="methodType">Payment Method Type</Label>
-        <Select
-          value={methodType}
-          onValueChange={setMethodType}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select payment method type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="card">Credit/Debit Card</SelectItem>
-            <SelectItem value="easypaisa">EasyPaisa</SelectItem>
-            <SelectItem value="jazzcash">JazzCash</SelectItem>
-            <SelectItem value="bank">Bank Account</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="methodName">Name (optional)</Label>
-        <Input 
-          id="methodName" 
-          value={methodName} 
-          onChange={(e) => setMethodName(e.target.value)}
-          placeholder={methodType === "card" ? "Personal Card" : 
-                       methodType === "easypaisa" ? "My EasyPaisa" : 
-                       methodType === "jazzcash" ? "My JazzCash" : "My Bank Account"}
-        />
-      </div>
-      
-      {methodType === "card" && (
-        <>
-          <div className="space-y-2">
-            <Label htmlFor="cardNumber">Card Number</Label>
-            <Input 
-              id="cardNumber" 
-              value={cardNumber} 
-              onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ''))}
-              placeholder="4242 4242 4242 4242"
-              maxLength={16}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cardExpiry">Expiry Date</Label>
-              <Input 
-                id="cardExpiry" 
-                value={cardExpiry} 
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '');
-                  let formatted = '';
-                  if (val.length > 0) {
-                    if (val.length <= 2) {
-                      formatted = val;
-                    } else {
-                      formatted = val.slice(0, 2) + '/' + val.slice(2, 4);
-                    }
-                  }
-                  setCardExpiry(formatted);
-                }}
-                placeholder="MM/YY"
-                maxLength={5}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cardCVC">CVC</Label>
-              <Input 
-                id="cardCVC" 
-                value={cardCVC} 
-                onChange={(e) => setCardCVC(e.target.value.replace(/\D/g, ''))}
-                placeholder="123"
-                maxLength={3}
-                required
-              />
-            </div>
-          </div>
-        </>
-      )}
-      
-      {(methodType === "easypaisa" || methodType === "jazzcash") && (
-        <div className="space-y-2">
-          <Label htmlFor="phoneNumber">Phone Number</Label>
-          <Input 
-            id="phoneNumber" 
-            value={phoneNumber} 
-            onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-            placeholder="03XX XXXXXXX"
-            maxLength={11}
-            required
-          />
+    <PaymentFormProvider
+      methodType={methodType}
+      methodName={methodName}
+      setMethodName={setMethodName}
+      onAddPaymentMethod={onAddPaymentMethod}
+      onClose={onClose}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+        <PaymentMethodTypeSelect value={methodType} onValueChange={setMethodType} />
+        <PaymentMethodNameInput />
+        
+        <CardPaymentForm />
+        <MobileWalletForm />
+        <BankAccountForm />
+        
+        <div className="pt-2">
+          <Button type="submit" className="w-full rounded-full">
+            Add Payment Method
+          </Button>
         </div>
-      )}
-      
-      {methodType === "bank" && (
-        <>
-          <div className="space-y-2">
-            <Label htmlFor="bankName">Bank Name</Label>
-            <Select
-              value={bankName}
-              onValueChange={setBankName}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select your bank" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="HBL">Habib Bank Limited (HBL)</SelectItem>
-                <SelectItem value="UBL">United Bank Limited (UBL)</SelectItem>
-                <SelectItem value="MCB">MCB Bank Limited</SelectItem>
-                <SelectItem value="ABL">Allied Bank Limited (ABL)</SelectItem>
-                <SelectItem value="Meezan">Meezan Bank</SelectItem>
-                <SelectItem value="BankAlfalah">Bank Alfalah</SelectItem>
-                <SelectItem value="BankAlHabib">Bank Al Habib</SelectItem>
-                <SelectItem value="Askari">Askari Bank</SelectItem>
-                <SelectItem value="SCB">Standard Chartered Bank</SelectItem>
-                <SelectItem value="Other">Other Bank</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="accountNumber">Account Number</Label>
-            <Input 
-              id="accountNumber" 
-              value={accountNumber} 
-              onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
-              placeholder="Account Number"
-              required
-            />
-          </div>
-        </>
-      )}
-      
-      <div className="pt-2">
-        <Button type="submit" className="w-full rounded-full">
-          Add Payment Method
-        </Button>
-      </div>
-    </form>
+      </form>
+    </PaymentFormProvider>
   );
 };
