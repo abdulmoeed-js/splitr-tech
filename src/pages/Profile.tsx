@@ -11,6 +11,15 @@ const Profile = () => {
     return <div>Loading...</div>;
   }
 
+  // Create a compatible user object that matches our UserProfileCardProps interface
+  const profileUser = {
+    profileImageUrl: user?.profileImageUrl,
+    fullName: user?.fullName,
+    primaryEmailAddress: user?.primaryEmailAddress,
+    // Convert Date to string to match our interface
+    createdAt: user?.createdAt ? user.createdAt.toISOString() : null
+  };
+
   return (
     <div className="container max-w-2xl py-8 px-4">
       <h1 className="text-3xl font-bold mb-6">My Profile</h1>
@@ -22,7 +31,7 @@ const Profile = () => {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
-          <UserProfileCard user={user} />
+          <UserProfileCard user={profileUser} />
         </TabsContent>
 
         <TabsContent value="payment" className="space-y-4">
