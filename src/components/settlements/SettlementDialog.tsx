@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Friend, SettlementPayment } from "@/types/expense";
 import { PaymentMethod } from "@/types/payment";
 import { toast } from "@/components/ui/use-toast";
-import { CreditCard, Wallet, ArrowRight } from "lucide-react";
+import { CreditCard, Wallet, ArrowRight, Smartphone, Building } from "lucide-react";
 
 interface SettlementDialogProps {
   fromFriend: Friend;
@@ -26,9 +26,14 @@ export const SettlementDialog = ({
   onSettleDebt
 }: SettlementDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"in-app" | "external" | "card">("in-app");
-  const [selectedCardId, setSelectedCardId] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<"in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank">("in-app");
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>("");
   const [settlementAmount, setSettlementAmount] = useState(amount.toFixed(2));
+
+  // Filter payment methods by type
+  const getPaymentMethodsByType = (type: string) => {
+    return paymentMethods.filter(method => method.type === type);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +46,7 @@ export const SettlementDialog = ({
       date: new Date(),
       status: "completed",
       method: paymentMethod,
-      paymentMethodId: paymentMethod === "card" ? selectedCardId : undefined,
+      paymentMethodId: ["card", "easypaisa", "jazzcash", "bank"].includes(paymentMethod) ? selectedPaymentMethodId : undefined,
       receiptUrl: `receipt-${Date.now()}.pdf` // Simulated receipt URL
     };
     
@@ -50,7 +55,7 @@ export const SettlementDialog = ({
     
     toast({
       title: "Payment Successful",
-      description: `You paid ${toFriend.name} $${settlementAmount}`
+      description: `You paid ${toFriend.name} Rs. ${settlementAmount}`
     });
   };
 
@@ -72,12 +77,12 @@ export const SettlementDialog = ({
                 <ArrowRight className="h-4 w-4 text-primary" />
                 <span>{toFriend.name}</span>
               </div>
-              <div className="font-semibold">${amount.toFixed(2)}</div>
+              <div className="font-semibold">Rs. {parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}</div>
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount to Pay</Label>
+            <Label htmlFor="amount">Amount to Pay (PKR)</Label>
             <Input
               id="amount"
               type="number"
@@ -94,7 +99,10 @@ export const SettlementDialog = ({
             <Label htmlFor="paymentMethod">Payment Method</Label>
             <Select
               value={paymentMethod}
-              onValueChange={(value) => setPaymentMethod(value as "in-app" | "external" | "card")}
+              onValueChange={(value) => {
+                setPaymentMethod(value as any);
+                setSelectedPaymentMethodId("");
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select payment method" />
@@ -108,33 +116,51 @@ export const SettlementDialog = ({
                 </SelectItem>
                 <SelectItem value="external">
                   <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
+                    <Building className="h-4 w-4" />
                     <span>Bank Transfer</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="card">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
-                    <span>Saved Card</span>
+                    <span>Credit/Debit Card</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="easypaisa">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4" />
+                    <span>EasyPaisa</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="jazzcash">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4" />
+                    <span>JazzCash</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="bank">
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    <span>Bank Account</span>
                   </div>
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
           
-          {paymentMethod === "card" && (
+          {paymentMethod === "card" && getPaymentMethodsByType("card").length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="card">Select Card</Label>
               <Select
-                value={selectedCardId}
-                onValueChange={setSelectedCardId}
-                required={paymentMethod === "card"}
+                value={selectedPaymentMethodId}
+                onValueChange={setSelectedPaymentMethodId}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a card" />
                 </SelectTrigger>
                 <SelectContent>
-                  {paymentMethods.map((method) => (
+                  {getPaymentMethodsByType("card").map((method) => (
                     <SelectItem key={method.id} value={method.id}>
                       {method.name} {method.lastFour && `(•••• ${method.lastFour})`}
                     </SelectItem>
@@ -144,8 +170,74 @@ export const SettlementDialog = ({
             </div>
           )}
           
+          {paymentMethod === "easypaisa" && getPaymentMethodsByType("easypaisa").length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="easypaisa">Select EasyPaisa Account</Label>
+              <Select
+                value={selectedPaymentMethodId}
+                onValueChange={setSelectedPaymentMethodId}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select EasyPaisa account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getPaymentMethodsByType("easypaisa").map((method) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      {method.name} {method.phoneNumber && `(${method.phoneNumber})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {paymentMethod === "jazzcash" && getPaymentMethodsByType("jazzcash").length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="jazzcash">Select JazzCash Account</Label>
+              <Select
+                value={selectedPaymentMethodId}
+                onValueChange={setSelectedPaymentMethodId}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select JazzCash account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getPaymentMethodsByType("jazzcash").map((method) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      {method.name} {method.phoneNumber && `(${method.phoneNumber})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {paymentMethod === "bank" && getPaymentMethodsByType("bank").length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="bank">Select Bank Account</Label>
+              <Select
+                value={selectedPaymentMethodId}
+                onValueChange={setSelectedPaymentMethodId}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select bank account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getPaymentMethodsByType("bank").map((method) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      {method.name} ({method.bankName})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <Button type="submit" className="w-full">
-            Pay ${settlementAmount}
+            Pay Rs. {parseFloat(settlementAmount).toLocaleString('en-PK')}
           </Button>
         </form>
       </DialogContent>

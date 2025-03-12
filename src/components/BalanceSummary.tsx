@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { SettlementDialog } from "@/components/settlements/SettlementDialog";
 import { PaymentReceipt } from "@/components/settlements/PaymentReceipt";
@@ -52,10 +51,9 @@ export const BalanceSummary = ({
 
     return balances;
   };
-
+  
   const balances = calculateBalances();
 
-  // Calculate who owes whom
   const calculateDebts = () => {
     const debts: { fromId: string; toId: string; amount: number }[] = [];
     
@@ -112,6 +110,10 @@ export const BalanceSummary = ({
 
   const debts = calculateDebts();
 
+  const formatCurrency = (amount: number) => {
+    return `Rs. ${parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}`;
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -131,7 +133,7 @@ export const BalanceSummary = ({
                     <TrendingDown className="w-4 h-4 text-red-500" />
                   )}
                   <span className={`font-semibold ${balances[friend.id] >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    ${Math.abs(balances[friend.id]).toFixed(2)}
+                    {formatCurrency(Math.abs(balances[friend.id]))}
                   </span>
                 </div>
               </div>
@@ -163,7 +165,7 @@ export const BalanceSummary = ({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-primary">
-                          ${debt.amount.toFixed(2)}
+                          {formatCurrency(debt.amount)}
                         </span>
                         
                         {/* Only show settle up button if the current user is the debtor */}
@@ -217,7 +219,7 @@ export const BalanceSummary = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-primary">
-                            ${payment.amount.toFixed(2)}
+                            {formatCurrency(payment.amount)}
                           </span>
                           <PaymentReceipt payment={payment} friends={friends} />
                         </div>

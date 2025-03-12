@@ -17,6 +17,10 @@ export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
+  const formatCurrency = (amount: number) => {
+    return `Rs. ${parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}`;
+  };
+
   return (
     <div className="space-y-4">
       {sortedExpenses.map((expense) => {
@@ -47,7 +51,7 @@ export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-primary">${expense.amount.toFixed(2)}</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(expense.amount)}</p>
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
                   <User className="w-3 h-3 mr-1" />
                   <span>

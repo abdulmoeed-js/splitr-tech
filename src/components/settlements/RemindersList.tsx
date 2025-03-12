@@ -19,6 +19,10 @@ export const RemindersList = ({
   onMarkAsRead,
   onSettleReminder
 }: RemindersListProps) => {
+  const formatCurrency = (amount: number) => {
+    return `Rs. ${parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}`;
+  };
+
   if (reminders.length === 0) {
     return (
       <Card className="p-6 text-center glass-panel">
@@ -50,7 +54,7 @@ export const RemindersList = ({
                       <Badge variant="outline" className="text-xs">New</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-primary font-semibold">${reminder.amount.toFixed(2)}</p>
+                  <p className="text-sm text-primary font-semibold">{formatCurrency(reminder.amount)}</p>
                   <div className="flex items-center mt-1 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3 mr-1" />
                     <span>Due {format(reminder.dueDate, "MMM d, yyyy")}</span>

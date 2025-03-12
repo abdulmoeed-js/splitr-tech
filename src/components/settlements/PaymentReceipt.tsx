@@ -18,6 +18,10 @@ export const PaymentReceipt = ({ payment, friends }: PaymentReceiptProps) => {
   
   if (!fromFriend || !toFriend) return null;
 
+  const formatCurrency = (amount: number) => {
+    return `Rs. ${parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}`;
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -54,7 +58,7 @@ export const PaymentReceipt = ({ payment, friends }: PaymentReceiptProps) => {
             
             <div className="flex justify-between">
               <span className="text-muted-foreground">Amount:</span>
-              <span className="font-medium">${payment.amount.toFixed(2)}</span>
+              <span className="font-medium">{formatCurrency(payment.amount)}</span>
             </div>
             
             <div className="flex justify-between">

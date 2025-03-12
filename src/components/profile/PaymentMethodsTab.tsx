@@ -9,7 +9,10 @@ import { PaymentMethod } from "@/types/payment";
 
 export const PaymentMethodsTab = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-    { id: "1", type: "card", name: "Personal Card", lastFour: "4242", expiryDate: "04/25" }
+    { id: "1", type: "card", name: "Personal Card", lastFour: "4242", expiryDate: "04/25" },
+    { id: "2", type: "easypaisa", name: "EasyPaisa", phoneNumber: "03001234567" },
+    { id: "3", type: "jazzcash", name: "JazzCash", phoneNumber: "03121234567" },
+    { id: "4", type: "bank", name: "Bank Account", bankName: "HBL", accountNumber: "12345678901" }
   ]);
   const [dialogOpen, setDialogOpen] = useState(false);
 

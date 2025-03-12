@@ -34,7 +34,7 @@ export interface SettlementPayment {
   amount: number;
   date: Date;
   status: "pending" | "completed";
-  method: "in-app" | "external" | "card";
+  method: "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank";
   paymentMethodId?: string;
   receiptUrl?: string;
 }
