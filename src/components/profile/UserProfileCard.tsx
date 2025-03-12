@@ -1,10 +1,16 @@
 
-import { UserResource } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { Card } from "@/components/ui/card";
 import { User } from "lucide-react";
 
+// Define our own interface that matches what we need from the Clerk user
 interface UserProfileCardProps {
-  user: UserResource;
+  user: {
+    profileImageUrl?: string | null;
+    fullName?: string | null;
+    primaryEmailAddress?: { emailAddress: string } | null;
+    createdAt?: string | null;
+  };
 }
 
 export const UserProfileCard = ({ user }: UserProfileCardProps) => {
