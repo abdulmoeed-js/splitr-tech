@@ -1,13 +1,17 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, User, Divide, Percent, Mail, Phone } from "lucide-react";
+import { PlusCircle, UserPlus, Mail, Phone } from "lucide-react";
 import { Friend, Split } from "@/types/expense";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AddExpenseDialogProps {
   friends: Friend[];
@@ -16,208 +20,111 @@ interface AddExpenseDialogProps {
   onInviteFriend: (email?: string, phone?: string) => void;
 }
 
-export const AddExpenseDialog = ({ 
+export function AddExpenseDialog({ 
   friends, 
   onAddExpense, 
   onAddFriend,
-  onInviteFriend 
-}: AddExpenseDialogProps) => {
+  onInviteFriend
+}: AddExpenseDialogProps) {
+  const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [paidBy, setPaidBy] = useState("");
-  const [open, setOpen] = useState(false);
-  const [showAddFriend, setShowAddFriend] = useState(false);
-  const [splitType, setSplitType] = useState("equal");
-  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
-  const [customSplits, setCustomSplits] = useState<Record<string, string>>({});
-  const [percentageSplits, setPercentageSplits] = useState<Record<string, string>>({});
-  
-  // Friend adding states
-  const [addFriendTab, setAddFriendTab] = useState<"quick" | "detailed" | "invite">("quick");
+  const [paidBy, setPaidBy] = useState(friends[0]?.id || "");
+  const [splits, setSplits] = useState<Split[]>([]);
   const [newFriendName, setNewFriendName] = useState("");
   const [newFriendEmail, setNewFriendEmail] = useState("");
   const [newFriendPhone, setNewFriendPhone] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePhone, setInvitePhone] = useState("");
+  const { toast } = useToast();
 
-  // Initialize splits when amount changes or when friends selection changes
-  useEffect(() => {
-    if (amount && splitType === "equal") {
-      initializeSplits();
-    }
-  }, [amount, selectedFriends, splitType]);
-
-  const initializeSplits = () => {
-    const selected = selectedFriends.length > 0 ? selectedFriends : friends.map(f => f.id);
-    const perPersonAmount = (Number(amount) / selected.length).toFixed(2);
-    const perPersonPercentage = (100 / selected.length).toFixed(1);
-    
-    const newSplits: Record<string, string> = {};
-    const newPercentages: Record<string, string> = {};
-    
-    selected.forEach(friendId => {
-      newSplits[friendId] = perPersonAmount;
-      newPercentages[friendId] = perPersonPercentage;
-    });
-    
-    setCustomSplits(newSplits);
-    setPercentageSplits(newPercentages);
-  };
-
-  const handleSplitTypeChange = (value: string) => {
-    setSplitType(value);
-    if (value === "equal" && amount) {
-      initializeSplits();
-    }
-  };
-
-  const handleFriendSelection = (friendId: string) => {
-    setSelectedFriends(prev => {
-      const isSelected = prev.includes(friendId);
-      const newSelection = isSelected 
-        ? prev.filter(id => id !== friendId)
-        : [...prev, friendId];
-        
-      // Update splits after selection changes
-      setTimeout(() => {
-        if (amount && newSelection.length > 0) {
-          const perPersonAmount = (Number(amount) / newSelection.length).toFixed(2);
-          const perPersonPercentage = (100 / newSelection.length).toFixed(1);
-          
-          const newSplits: Record<string, string> = {};
-          const newPercentages: Record<string, string> = {};
-          
-          newSelection.forEach(id => {
-            newSplits[id] = perPersonAmount;
-            newPercentages[id] = perPersonPercentage;
-          });
-          
-          setCustomSplits(newSplits);
-          setPercentageSplits(newPercentages);
-        }
-      }, 0);
-      
-      return newSelection;
-    });
-  };
-
-  const handleCustomSplitChange = (friendId: string, value: string) => {
-    setCustomSplits(prev => ({
-      ...prev,
-      [friendId]: value
-    }));
-  };
-
-  const handlePercentageSplitChange = (friendId: string, value: string) => {
-    // Ensure percentage is between 0 and 100
-    const percentage = Math.min(100, Math.max(0, Number(value) || 0));
-    
-    setPercentageSplits(prev => ({
-      ...prev,
-      [friendId]: percentage.toString()
-    }));
-    
-    // Update the amount based on the percentage
-    if (amount) {
-      const newAmount = (Number(amount) * percentage / 100).toFixed(2);
-      setCustomSplits(prev => ({
-        ...prev,
-        [friendId]: newAmount
-      }));
-    }
-  };
-
-  const calculateSplitTotal = () => {
-    return Object.values(customSplits).reduce((sum, val) => sum + Number(val), 0);
-  };
-
-  const calculatePercentageTotal = () => {
-    return Object.values(percentageSplits).reduce((sum, val) => sum + Number(val), 0);
+  const resetForm = () => {
+    setDescription("");
+    setAmount("");
+    setPaidBy(friends[0]?.id || "");
+    setSplits([]);
+    setNewFriendName("");
+    setNewFriendEmail("");
+    setNewFriendPhone("");
+    setInviteEmail("");
+    setInvitePhone("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!description.trim() || !amount.trim()) {
+      toast({
+        title: "Please fill in all fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      toast({
+        title: "Please enter a valid amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!paidBy) {
-      return; // Ensure payer is selected
+      toast({
+        title: "Please select who paid the expense.",
+        variant: "destructive",
+      });
+      return;
     }
-    
-    let splits: Split[] = [];
-    const friendsToSplit = selectedFriends.length > 0 ? selectedFriends : friends.map(f => f.id);
-    
-    if (splitType === "equal") {
-      const perPersonAmount = Number(amount) / friendsToSplit.length;
-      
-      splits = friendsToSplit.map(friendId => ({
-        friendId,
-        amount: perPersonAmount,
-      }));
-    } else if (splitType === "custom") {
-      splits = Object.entries(customSplits)
-        .filter(([_, splitAmount]) => Number(splitAmount) > 0)
-        .map(([friendId, splitAmount]) => ({
-          friendId,
-          amount: Number(splitAmount),
-        }));
-    } else if (splitType === "percentage") {
-      splits = Object.entries(percentageSplits)
-        .filter(([_, percentage]) => Number(percentage) > 0)
-        .map(([friendId, percentage]) => ({
-          friendId,
-          amount: Number(amount) * Number(percentage) / 100,
-          percentage: Number(percentage),
-        }));
+
+    if (splits.length === 0) {
+      toast({
+        title: "Please add at least one split.",
+        variant: "destructive",
+      });
+      return;
     }
-    
-    onAddExpense(description, Number(amount), paidBy, splits);
-    setDescription("");
-    setAmount("");
-    setPaidBy("");
-    setSplitType("equal");
-    setSelectedFriends([]);
-    setCustomSplits({});
-    setPercentageSplits({});
+
+    onAddExpense(description, amountValue, paidBy, splits);
     setOpen(false);
+    resetForm();
+    
+    toast({
+      title: "Expense Added",
+      description: "Your expense has been successfully added.",
+    });
   };
 
-  const handleQuickAddFriend = () => {
+  const handleAddFriend = (e: React.FormEvent) => {
+    e.preventDefault();
     if (newFriendName.trim()) {
-      onAddFriend(newFriendName.trim(), undefined, undefined);
-      setNewFriendName("");
-      setShowAddFriend(false);
-    }
-  };
-
-  const handleDetailedAddFriend = () => {
-    if (newFriendName.trim()) {
-      onAddFriend(newFriendName.trim(), newFriendEmail, newFriendPhone);
+      onAddFriend(newFriendName, newFriendEmail, newFriendPhone);
       setNewFriendName("");
       setNewFriendEmail("");
       setNewFriendPhone("");
-      setShowAddFriend(false);
     }
   };
 
-  const handleInviteFriend = () => {
+  const handleInviteFriend = (e: React.FormEvent) => {
+    e.preventDefault();
     if (inviteEmail || invitePhone) {
       onInviteFriend(inviteEmail, invitePhone);
       setInviteEmail("");
       setInvitePhone("");
-      setShowAddFriend(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="fixed bottom-6 right-6 rounded-full shadow-lg">
-          <Plus className="mr-2" /> Add Expense
+        <Button className="rounded-full">
+          <PlusCircle className="mr-2 h-4 w-4" /> Add Expense
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass-panel max-w-md">
+      <DialogContent className="glass-panel">
         <DialogHeader>
           <DialogTitle>Add New Expense</DialogTitle>
-          <DialogDescription>Enter the expense details and select who paid.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -226,7 +133,7 @@ export const AddExpenseDialog = ({
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Dinner, Movies, etc."
+              placeholder="Expense description"
               required
             />
           </div>
@@ -236,256 +143,146 @@ export const AddExpenseDialog = ({
               id="amount"
               type="number"
               value={amount}
-              onChange={(e) => {
-                setAmount(e.target.value);
-                // Calculations will be triggered by the useEffect
-              }}
+              onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              min="0"
-              step="0.01"
               required
             />
           </div>
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="paidBy">Paid By</Label>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowAddFriend(!showAddFriend)}
-                className="text-xs flex items-center"
-              >
-                <Plus className="h-3 w-3 mr-1" /> Add Friend
-              </Button>
-            </div>
-            
-            {showAddFriend ? (
-              <div className="bg-background/30 border rounded-md p-3 space-y-3">
-                <Tabs defaultValue="quick" onValueChange={(value) => setAddFriendTab(value as any)}>
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="quick">Quick Add</TabsTrigger>
-                    <TabsTrigger value="detailed">Detailed</TabsTrigger>
-                    <TabsTrigger value="invite">Invite</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="quick" className="space-y-2 mt-2">
-                    <Input
-                      value={newFriendName}
-                      onChange={(e) => setNewFriendName(e.target.value)}
-                      placeholder="Friend's name"
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={handleQuickAddFriend}
-                      size="sm"
-                      className="w-full"
-                      disabled={!newFriendName.trim()}
-                    >
-                      Add Friend
-                    </Button>
-                  </TabsContent>
-                  
-                  <TabsContent value="detailed" className="space-y-2 mt-2">
-                    <Input
-                      value={newFriendName}
-                      onChange={(e) => setNewFriendName(e.target.value)}
-                      placeholder="Friend's name"
-                      className="mb-2"
-                    />
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        value={newFriendEmail}
-                        onChange={(e) => setNewFriendEmail(e.target.value)}
-                        placeholder="Email"
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="tel"
-                        value={newFriendPhone}
-                        onChange={(e) => setNewFriendPhone(e.target.value)}
-                        placeholder="Phone"
-                      />
-                    </div>
-                    <Button 
-                      type="button" 
-                      onClick={handleDetailedAddFriend}
-                      size="sm"
-                      className="w-full"
-                      disabled={!newFriendName.trim()}
-                    >
-                      Add Friend
-                    </Button>
-                  </TabsContent>
-                  
-                  <TabsContent value="invite" className="space-y-2 mt-2">
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        placeholder="Email"
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="tel"
-                        value={invitePhone}
-                        onChange={(e) => setInvitePhone(e.target.value)}
-                        placeholder="Phone"
-                      />
-                    </div>
-                    <Button 
-                      type="button" 
-                      onClick={handleInviteFriend}
-                      size="sm"
-                      className="w-full"
-                      disabled={!inviteEmail && !invitePhone}
-                    >
-                      Invite Friend
-                    </Button>
-                  </TabsContent>
-                </Tabs>
-                
-                <div className="flex justify-end">
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowAddFriend(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Select value={paidBy} onValueChange={setPaidBy} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select who paid" />
-                </SelectTrigger>
-                <SelectContent>
-                  {friends.map((friend) => (
-                    <SelectItem key={friend.id} value={friend.id}>
-                      {friend.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <Label>Split Type</Label>
-            <div className="flex space-x-2">
-              <Button
-                type="button"
-                variant={splitType === "equal" ? "default" : "outline"}
-                onClick={() => handleSplitTypeChange("equal")}
-                className="flex-1"
-              >
-                Equal
-              </Button>
-              <Button
-                type="button"
-                variant={splitType === "percentage" ? "default" : "outline"}
-                onClick={() => handleSplitTypeChange("percentage")}
-                className="flex-1"
-              >
-                <Percent className="mr-1 h-4 w-4" /> Percent
-              </Button>
-              <Button
-                type="button"
-                variant={splitType === "custom" ? "default" : "outline"}
-                onClick={() => handleSplitTypeChange("custom")}
-                className="flex-1"
-              >
-                Custom
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Split Among</Label>
-            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-2">
-              {friends.map(friend => (
-                <div key={friend.id} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`friend-${friend.id}`}
-                      checked={selectedFriends.length === 0 || selectedFriends.includes(friend.id)}
-                      onCheckedChange={() => handleFriendSelection(friend.id)}
-                    />
-                    <Label htmlFor={`friend-${friend.id}`} className="cursor-pointer flex items-center">
-                      {friend.name}
-                      {friend.isInvited && !friend.isComplete && (
-                        <span className="ml-2 text-xs text-yellow-500">
-                          (Invited)
-                        </span>
-                      )}
-                    </Label>
-                  </div>
-
-                  {splitType === "custom" && (selectedFriends.length === 0 || selectedFriends.includes(friend.id)) && (
-                    <Input
-                      value={customSplits[friend.id] || ""}
-                      onChange={(e) => handleCustomSplitChange(friend.id, e.target.value)}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className="w-24"
-                    />
-                  )}
-
-                  {splitType === "percentage" && (selectedFriends.length === 0 || selectedFriends.includes(friend.id)) && (
-                    <div className="flex items-center w-24">
-                      <Input
-                        value={percentageSplits[friend.id] || ""}
-                        onChange={(e) => handlePercentageSplitChange(friend.id, e.target.value)}
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="1"
-                        className="w-16"
-                      />
-                      <span className="ml-1">%</span>
-                    </div>
-                  )}
-                </div>
+            <Label htmlFor="paidBy">Paid By</Label>
+            <select
+              id="paidBy"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={paidBy}
+              onChange={(e) => setPaidBy(e.target.value)}
+            >
+              {friends.map((friend) => (
+                <option key={friend.id} value={friend.id}>
+                  {friend.name}
+                </option>
               ))}
-            </div>
-
-            {splitType === "custom" && (
-              <div className="flex justify-between items-center text-sm">
-                <span>Total: ${calculateSplitTotal().toFixed(2)}</span>
-                <span className={Number(amount) !== calculateSplitTotal() ? "text-red-500" : "text-green-500"}>
-                  {Number(amount) !== calculateSplitTotal() 
-                    ? `Difference: $${(Number(amount) - calculateSplitTotal()).toFixed(2)}` 
-                    : "Splits match total ✓"}
-                </span>
-              </div>
-            )}
-
-            {splitType === "percentage" && (
-              <div className="flex justify-between items-center text-sm">
-                <span>Total: {calculatePercentageTotal().toFixed(1)}%</span>
-                <span className={Math.abs(100 - calculatePercentageTotal()) > 0.1 ? "text-red-500" : "text-green-500"}>
-                  {Math.abs(100 - calculatePercentageTotal()) > 0.1
-                    ? `Difference: ${(100 - calculatePercentageTotal()).toFixed(1)}%` 
-                    : "Percentages match 100% ✓"}
-                </span>
-              </div>
-            )}
+            </select>
           </div>
-
+          <div className="space-y-2">
+            <Label>Splits</Label>
+            {friends.map((friend) => (
+              <div key={friend.id} className="flex items-center space-x-2">
+                <Label htmlFor={`split-${friend.id}`}>{friend.name}</Label>
+                <Input
+                  type="number"
+                  id={`split-${friend.id}`}
+                  placeholder="0.00"
+                  className="w-24"
+                  onChange={(e) => {
+                    const splitAmount = parseFloat(e.target.value);
+                    if (!isNaN(splitAmount)) {
+                      setSplits((prevSplits) => {
+                        const existingSplitIndex = prevSplits.findIndex(
+                          (split) => split.friendId === friend.id
+                        );
+                        if (existingSplitIndex !== -1) {
+                          const newSplits = [...prevSplits];
+                          newSplits[existingSplitIndex] = {
+                            ...newSplits[existingSplitIndex],
+                            amount: splitAmount,
+                          };
+                          return newSplits;
+                        } else {
+                          return [
+                            ...prevSplits,
+                            { friendId: friend.id, amount: splitAmount },
+                          ];
+                        }
+                      });
+                    } else {
+                      setSplits((prevSplits) =>
+                        prevSplits.filter((split) => split.friendId !== friend.id)
+                      );
+                    }
+                  }}
+                />
+              </div>
+            ))}
+          </div>
           <Button type="submit" className="w-full">
             Add Expense
           </Button>
         </form>
+        
+        <div className="mt-4 py-2 border-t">
+          <h3 className="text-lg font-semibold">Add New Friend</h3>
+          
+          <form onSubmit={handleAddFriend} className="space-y-2">
+            <div className="space-y-1">
+              <Label htmlFor="newFriendName">Name</Label>
+              <Input
+                id="newFriendName"
+                value={newFriendName}
+                onChange={(e) => setNewFriendName(e.target.value)}
+                placeholder="Friend's name"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="newFriendEmail">Email (Optional)</Label>
+              <Input
+                type="email"
+                id="newFriendEmail"
+                value={newFriendEmail}
+                onChange={(e) => setNewFriendEmail(e.target.value)}
+                placeholder="friend@example.com"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="newFriendPhone">Phone (Optional)</Label>
+              <Input
+                type="tel"
+                id="newFriendPhone"
+                value={newFriendPhone}
+                onChange={(e) => setNewFriendPhone(e.target.value)}
+                placeholder="+1234567890"
+              />
+            </div>
+            
+            <Button type="submit" variant="secondary">
+              <UserPlus className="mr-2 h-4 w-4" /> Add Friend
+            </Button>
+          </form>
+          
+          <div className="mt-4 py-2 border-t">
+            <h3 className="text-lg font-semibold">Invite Friend</h3>
+            
+            <form onSubmit={handleInviteFriend} className="space-y-2">
+              <div className="space-y-1">
+                <Label htmlFor="inviteEmail">Email</Label>
+                <Input
+                  type="email"
+                  id="inviteEmail"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="friend@example.com"
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <Label htmlFor="invitePhone">Phone</Label>
+                <Input
+                  type="tel"
+                  id="invitePhone"
+                  value={invitePhone}
+                  onChange={(e) => setInvitePhone(e.target.value)}
+                  placeholder="+1234567890"
+                />
+              </div>
+              
+              <Button type="submit" variant="secondary">
+                <Mail className="mr-2 h-4 w-4" /> Invite Friend
+              </Button>
+            </form>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
+  );
+}
