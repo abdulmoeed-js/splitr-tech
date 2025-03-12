@@ -1,25 +1,26 @@
 
-import { useUser } from "@clerk/clerk-react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfileCard } from "@/components/profile/UserProfileCard";
 import { PaymentMethodsTab } from "@/components/profile/PaymentMethodsTab";
 import { Search, Bell, ChevronLeft } from "lucide-react";
 import { AccountSettingsTab } from "@/components/profile/AccountSettingsTab";
+import { useAuth } from "@/hooks/useAuth";
 
 const Profile = () => {
-  const { user, isLoaded } = useUser();
+  const { user, loading } = useAuth();
 
-  if (!isLoaded) {
+  if (loading) {
     return <div className="flex h-screen items-center justify-center bg-black text-white">Loading...</div>;
   }
 
   // Create a compatible user object that matches our UserProfileCardProps interface
   const profileUser = {
-    profileImageUrl: user?.profileImageUrl,
-    fullName: user?.fullName,
-    primaryEmailAddress: user?.primaryEmailAddress?.emailAddress,
+    profileImageUrl: null, // Supabase doesn't provide profile images by default
+    fullName: user?.email?.split('@')[0] || "User",
+    primaryEmailAddress: user?.email,
     // Convert Date to string to match our interface
-    createdAt: user?.createdAt ? user.createdAt.toISOString() : null
+    createdAt: user?.created_at || new Date().toISOString()
   };
 
   return (
