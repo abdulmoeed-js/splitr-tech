@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Receipt, User } from "lucide-react";
-import { Expense } from "@/types/expense";
+import { Expense, Friend } from "@/types/expense";
 
 interface ExpenseListProps {
   expenses: Expense[];

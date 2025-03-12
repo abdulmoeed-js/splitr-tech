@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, User } from "lucide-react";
+import { Plus, User, Divide } from "lucide-react";
 import { Friend, Split } from "@/types/expense";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AddExpenseDialogProps {
   friends: Friend[];
@@ -21,17 +22,92 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
   const [open, setOpen] = useState(false);
   const [newFriendName, setNewFriendName] = useState("");
   const [showAddFriend, setShowAddFriend] = useState(false);
+  const [splitType, setSplitType] = useState("equal");
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+  const [customSplits, setCustomSplits] = useState<Record<string, string>>({});
+
+  // Initialize splits when amount changes or when friends selection changes
+  const initializeSplits = () => {
+    const selected = selectedFriends.length > 0 ? selectedFriends : friends.map(f => f.id);
+    const perPersonAmount = (Number(amount) / selected.length).toFixed(2);
+    
+    const newSplits: Record<string, string> = {};
+    selected.forEach(friendId => {
+      newSplits[friendId] = perPersonAmount;
+    });
+    
+    setCustomSplits(newSplits);
+  };
+
+  const handleSplitTypeChange = (value: string) => {
+    setSplitType(value);
+    if (value === "equal" && amount) {
+      initializeSplits();
+    }
+  };
+
+  const handleFriendSelection = (friendId: string) => {
+    setSelectedFriends(prev => {
+      const isSelected = prev.includes(friendId);
+      const newSelection = isSelected 
+        ? prev.filter(id => id !== friendId)
+        : [...prev, friendId];
+        
+      // Update splits after selection changes
+      setTimeout(() => {
+        if (splitType === "equal" && amount && newSelection.length > 0) {
+          const perPersonAmount = (Number(amount) / newSelection.length).toFixed(2);
+          const newSplits: Record<string, string> = {};
+          newSelection.forEach(id => {
+            newSplits[id] = perPersonAmount;
+          });
+          setCustomSplits(newSplits);
+        }
+      }, 0);
+      
+      return newSelection;
+    });
+  };
+
+  const handleCustomSplitChange = (friendId: string, value: string) => {
+    setCustomSplits(prev => ({
+      ...prev,
+      [friendId]: value
+    }));
+  };
+
+  const calculateSplitTotal = () => {
+    return Object.values(customSplits).reduce((sum, val) => sum + Number(val), 0);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const splits = friends.map((friend) => ({
-      friendId: friend.id,
-      amount: Number(amount) / friends.length,
-    }));
+    
+    let splits: Split[] = [];
+    
+    if (splitType === "equal") {
+      // If no friends are explicitly selected, split among all friends
+      const friendsToSplit = selectedFriends.length > 0 ? selectedFriends : friends.map(f => f.id);
+      const perPersonAmount = Number(amount) / friendsToSplit.length;
+      
+      splits = friendsToSplit.map(friendId => ({
+        friendId,
+        amount: perPersonAmount,
+      }));
+    } else if (splitType === "custom") {
+      splits = Object.entries(customSplits).map(([friendId, splitAmount]) => ({
+        friendId,
+        amount: Number(splitAmount),
+      }));
+    }
+    
     onAddExpense(description, Number(amount), paidBy, splits);
     setDescription("");
     setAmount("");
     setPaidBy("");
+    setSplitType("equal");
+    setSelectedFriends([]);
+    setCustomSplits({});
     setOpen(false);
   };
 
@@ -51,7 +127,7 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
           <Plus className="mr-2" /> Add Expense
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass-panel">
+      <DialogContent className="glass-panel max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Expense</DialogTitle>
           <DialogDescription>Enter the expense details and select who paid.</DialogDescription>
@@ -73,7 +149,17 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
               id="amount"
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                if (splitType === "equal" && e.target.value && selectedFriends.length > 0) {
+                  const perPersonAmount = (Number(e.target.value) / selectedFriends.length).toFixed(2);
+                  const newSplits: Record<string, string> = {};
+                  selectedFriends.forEach(id => {
+                    newSplits[id] = perPersonAmount;
+                  });
+                  setCustomSplits(newSplits);
+                }
+              }}
               placeholder="0.00"
               min="0"
               step="0.01"
@@ -125,6 +211,71 @@ export const AddExpenseDialog = ({ friends, onAddExpense, onAddFriend }: AddExpe
               </Select>
             )}
           </div>
+
+          <div className="space-y-3">
+            <Label>Split Type</Label>
+            <div className="flex space-x-2">
+              <Button
+                type="button"
+                variant={splitType === "equal" ? "default" : "outline"}
+                onClick={() => handleSplitTypeChange("equal")}
+                className="flex-1"
+              >
+                Equal
+              </Button>
+              <Button
+                type="button"
+                variant={splitType === "custom" ? "default" : "outline"}
+                onClick={() => handleSplitTypeChange("custom")}
+                className="flex-1"
+              >
+                Custom
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Split Among</Label>
+            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-2">
+              {friends.map(friend => (
+                <div key={friend.id} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`friend-${friend.id}`}
+                      checked={selectedFriends.length === 0 || selectedFriends.includes(friend.id)}
+                      onCheckedChange={() => handleFriendSelection(friend.id)}
+                    />
+                    <Label htmlFor={`friend-${friend.id}`} className="cursor-pointer">
+                      {friend.name}
+                    </Label>
+                  </div>
+
+                  {splitType === "custom" && (selectedFriends.length === 0 || selectedFriends.includes(friend.id)) && (
+                    <Input
+                      value={customSplits[friend.id] || ""}
+                      onChange={(e) => handleCustomSplitChange(friend.id, e.target.value)}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="w-24"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {splitType === "custom" && (
+              <div className="flex justify-between items-center text-sm">
+                <span>Total: ${calculateSplitTotal().toFixed(2)}</span>
+                <span className={Number(amount) !== calculateSplitTotal() ? "text-red-500" : "text-green-500"}>
+                  {Number(amount) !== calculateSplitTotal() 
+                    ? `Difference: $${(Number(amount) - calculateSplitTotal()).toFixed(2)}` 
+                    : "Splits match total ✓"}
+                </span>
+              </div>
+            )}
+          </div>
+
           <Button type="submit" className="w-full">
             Add Expense
           </Button>
