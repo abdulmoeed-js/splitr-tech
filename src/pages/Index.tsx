@@ -1,4 +1,5 @@
 
+import { AuthWrapper } from "@/components/AuthWrapper";
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
 import { GroupHeader } from "@/components/groups/GroupHeader";
 import { ExpenseDashboard } from "@/components/expenses/ExpenseDashboard";
@@ -35,7 +36,9 @@ const Index = () => {
       </p>
       
       {!isLoaded ? (
-        <div className="text-center py-10">Loading...</div>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
       ) : (
         <>
           <GroupHeader 

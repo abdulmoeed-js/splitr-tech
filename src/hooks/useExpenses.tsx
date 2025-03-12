@@ -1,16 +1,36 @@
 
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Friend, Expense, Split, FriendGroup, SettlementPayment, PaymentReminder } from "@/types/expense";
 import { PaymentMethod } from "@/types/payment";
 import { toast } from "@/components/ui/use-toast";
+import { Session } from "@supabase/supabase-js";
 
 export const useExpenses = () => {
-  const { user, isLoaded } = useUser();
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   
   // Set a default name that works whether logged in or not
-  const userName = user?.fullName || "You";
+  const userName = session?.user?.email?.split('@')[0] || "You";
   
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        setIsLoaded(true);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setIsLoaded(true);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   const [friends, setFriends] = useState<Friend[]>([
     { id: "1", name: userName },
     { id: "2", name: "Alice" },
@@ -20,17 +40,18 @@ export const useExpenses = () => {
 
   // Update friends list if user name changes
   useEffect(() => {
-    if (isLoaded && user?.fullName) {
+    if (isLoaded && session?.user) {
       setFriends(prev => {
         const updated = [...prev];
         const userIndex = updated.findIndex(f => f.id === "1");
         if (userIndex !== -1) {
-          updated[userIndex] = { ...updated[userIndex], name: user.fullName || "You" };
+          const displayName = session.user.email?.split('@')[0] || "You";
+          updated[userIndex] = { ...updated[userIndex], name: displayName };
         }
         return updated;
       });
     }
-  }, [isLoaded, user?.fullName]);
+  }, [isLoaded, session]);
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [groups, setGroups] = useState<FriendGroup[]>([]);
@@ -279,3 +300,4 @@ export const useExpenses = () => {
     handleSettleReminder
   };
 };
+
