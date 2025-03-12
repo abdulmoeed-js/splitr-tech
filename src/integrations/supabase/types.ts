@@ -9,7 +9,220 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      expense_splits: {
+        Row: {
+          amount: number
+          created_at: string
+          expense_id: string
+          friend_id: string
+          id: string
+          percentage: number | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          expense_id: string
+          friend_id: string
+          id?: string
+          percentage?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expense_id?: string
+          friend_id?: string
+          id?: string
+          percentage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_splits_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          description: string
+          group_id: string | null
+          id: string
+          paid_by: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          date?: string
+          description: string
+          group_id?: string | null
+          id?: string
+          paid_by: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          description?: string
+          group_id?: string | null
+          id?: string
+          paid_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      friend_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      friends: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          created_at: string
+          friend_id: string
+          group_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          group_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          group_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "friend_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_reminders: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          from_friend_id: string
+          id: string
+          is_paid: boolean
+          is_read: boolean
+          to_friend_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date: string
+          from_friend_id: string
+          id?: string
+          is_paid?: boolean
+          is_read?: boolean
+          to_friend_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          from_friend_id?: string
+          id?: string
+          is_paid?: boolean
+          is_read?: boolean
+          to_friend_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          from_friend_id: string
+          id: string
+          method: string
+          receipt_url: string | null
+          status: string
+          to_friend_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          date?: string
+          from_friend_id: string
+          id?: string
+          method: string
+          receipt_url?: string | null
+          status: string
+          to_friend_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          from_friend_id?: string
+          id?: string
+          method?: string
+          receipt_url?: string | null
+          status?: string
+          to_friend_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,79 +1,44 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+
+import { useState } from "react";
+import { Card } from "./ui/card";
+import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Session } from "@supabase/supabase-js";
+import { Label } from "./ui/label";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "./ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Logo } from "./Logo";
 
-interface AuthWrapperProps {
-  children: React.ReactNode;
-  requireAuth?: boolean;
-}
-
-export const AuthWrapper = ({ children, requireAuth = true }: AuthWrapperProps) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setIsLoaded(true);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setIsLoaded(true);
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded && !session && requireAuth) {
-      navigate("/login");
-    }
-  }, [isLoaded, session, requireAuth, navigate]);
-
-  if (!isLoaded) {
-    return <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    </div>;
-  }
-
-  if (!session && requireAuth) {
-    return null; // Will redirect to login
-  }
-
-  return <>{children}</>;
+// Common authentication layout
+const AuthLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="container max-w-md py-10">
+      <div className="flex justify-center mb-6">
+        <Logo className="w-12 h-12" />
+      </div>
+      <h1 className="text-3xl font-bold text-center mb-8">Splitr</h1>
+      {children}
+    </div>
+  );
 };
 
+// Sign In Page Component
 export const SignInPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate("/");
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
+  if (isAuthenticated) {
+    return <Navigate to="/" />;
+  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -83,13 +48,17 @@ export const SignInPage = () => {
       
       if (error) throw error;
       
+      toast({
+        title: "Signed in successfully",
+        description: "Welcome back to Splitr!"
+      });
+      
       navigate("/");
     } catch (error: any) {
-      setError(error.message || 'An error occurred during sign in');
       toast({
         variant: "destructive",
-        title: "Authentication Error",
-        description: error.message || 'An error occurred during sign in'
+        title: "Sign in failed",
+        description: error.message || "Please check your credentials and try again"
       });
     } finally {
       setLoading(false);
@@ -97,114 +66,101 @@ export const SignInPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
-      <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-        Splitr
-      </h1>
-      <div className="glass-panel w-full max-w-md p-8">
-        <h2 className="text-2xl font-bold text-primary mb-6">Sign In</h2>
-        
-        {error && (
-          <div className="bg-destructive/10 text-destructive p-3 rounded-md mb-4">
-            {error}
-          </div>
-        )}
-        
-        <form onSubmit={handleSignIn} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full p-2 border rounded-md"
-              placeholder="your@email.com"
-            />
-          </div>
+    <AuthLayout>
+      <Card className="p-6 shadow-lg glass-panel">
+        <Tabs defaultValue="email">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger className="flex-1" value="email">Email</TabsTrigger>
+            <TabsTrigger className="flex-1" value="magic" disabled>Magic Link</TabsTrigger>
+          </TabsList>
           
-          <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full p-2 border rounded-md"
-            />
-          </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full rounded-full" 
-            disabled={loading}
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </Button>
-        </form>
+          <TabsContent value="email">
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="your.email@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <a href="#" className="text-xs text-primary">
+                    Forgot password?
+                  </a>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing in..." : "Sign In"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
         
         <div className="mt-4 text-center">
           <p className="text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Button variant="link" className="p-0" onClick={() => navigate("/signup")}>
-              Sign Up
-            </Button>
+            <a href="/signup" className="text-primary font-medium">
+              Sign up
+            </a>
           </p>
         </div>
-      </div>
-    </div>
+      </Card>
+    </AuthLayout>
   );
 };
 
+// Sign Up Page Component
 export const SignUpPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate("/");
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
+  if (isAuthenticated) {
+    return <Navigate to="/" />;
+  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
       });
       
       if (error) throw error;
       
       toast({
-        title: "Account created",
-        description: "Please check your email to confirm your account",
+        title: "Sign up successful",
+        description: "Please check your email to verify your account."
       });
       
       navigate("/login");
     } catch (error: any) {
-      setError(error.message || 'An error occurred during sign up');
       toast({
         variant: "destructive",
-        title: "Authentication Error",
-        description: error.message || 'An error occurred during sign up'
+        title: "Sign up failed",
+        description: error.message || "Please try again with a different email"
       });
     } finally {
       setLoading(false);
@@ -212,68 +168,68 @@ export const SignUpPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
-      <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-        Splitr
-      </h1>
-      <div className="glass-panel w-full max-w-md p-8">
-        <h2 className="text-2xl font-bold text-primary mb-6">Create Account</h2>
-        
-        {error && (
-          <div className="bg-destructive/10 text-destructive p-3 rounded-md mb-4">
-            {error}
-          </div>
-        )}
-        
+    <AuthLayout>
+      <Card className="p-6 shadow-lg glass-panel">
         <form onSubmit={handleSignUp} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <input
+            <Label htmlFor="email">Email</Label>
+            <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full p-2 border rounded-md"
-              placeholder="your@email.com"
+              placeholder="your.email@example.com"
             />
           </div>
-          
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
-            <input
+            <Label htmlFor="password">Password</Label>
+            <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full p-2 border rounded-md"
+              placeholder="••••••••"
               minLength={6}
             />
+            <p className="text-xs text-muted-foreground">
+              Password must be at least 6 characters
+            </p>
           </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full rounded-full" 
-            disabled={loading}
-          >
-            {loading ? "Creating account..." : "Sign Up"}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Creating Account..." : "Create Account"}
           </Button>
         </form>
         
         <div className="mt-4 text-center">
           <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Button variant="link" className="p-0" onClick={() => navigate("/login")}>
-              Sign In
-            </Button>
+            <a href="/login" className="text-primary font-medium">
+              Sign in
+            </a>
           </p>
         </div>
-      </div>
-    </div>
+      </Card>
+    </AuthLayout>
   );
+};
+
+// Protected Route Wrapper
+export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  
+  return <>{children}</>;
 };
