@@ -58,6 +58,7 @@ export const GroupHeader = ({
         onClose={() => setIsDialogOpen(false)}
         onSave={handleAddGroup}
         friends={friends}
+        onAddGroup={() => {}} // Providing empty function as it's required by the component
       />
     </div>
   );

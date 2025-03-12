@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,15 +12,29 @@ import { Plus, Users } from "lucide-react";
 interface FriendGroupDialogProps {
   friends: Friend[];
   onAddGroup: (name: string, memberIds: string[]) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onSave?: (name: string, memberIds: string[]) => void;
 }
 
 export const FriendGroupDialog = ({ 
   friends, 
-  onAddGroup 
+  onAddGroup,
+  isOpen: externalOpen,
+  onClose: externalClose,
+  onSave
 }: FriendGroupDialogProps) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+
+  // Use external or internal state based on what's provided
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalClose ? 
+    (value: boolean) => {
+      if (!value) externalClose();
+    } : 
+    setInternalOpen;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +55,12 @@ export const FriendGroupDialog = ({
       return;
     }
     
-    onAddGroup(groupName.trim(), selectedFriends);
+    if (onSave) {
+      onSave(groupName.trim(), selectedFriends);
+    } else {
+      onAddGroup(groupName.trim(), selectedFriends);
+    }
+    
     setOpen(false);
     setGroupName("");
     setSelectedFriends([]);

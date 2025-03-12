@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useSession } from "@/hooks/useSession";
 import { useFriends } from "@/hooks/useFriends";
@@ -21,8 +21,8 @@ export default function Home() {
   const { session, userName } = useSession();
   const { expenses, handleAddExpense } = useExpenses();
   const { friends } = useFriends(session, userName);
-  const { groups, handleCreateGroup } = useGroups(session);
-  const { payments, handleAddPayment } = usePayments(session);
+  const { groups, addGroup } = useGroups(session, friends);
+  const { payments, settleDebt } = usePayments(session);
   const { reminders, handleMarkReminderAsRead, handleSettleReminder } = useReminders(session);
   const { calculateBalances, getFilteredExpenses } = useBalanceCalculation();
 
@@ -54,7 +54,7 @@ export default function Home() {
 
   const handleSettleUp = (paymentMethod: string, amount: number) => {
     if (selectedReminder) {
-      handleSettleReminder(selectedReminder);
+      handleSettleReminder(selectedReminder.id);
     }
     setIsSettlementOpen(false);
     setSelectedReminder(null);
@@ -63,6 +63,23 @@ export default function Home() {
   const selectedGroup = selectedGroupId
     ? groups.find(g => g.id === selectedGroupId)
     : null;
+
+  // Modify component props to fit expected types
+  const hasUnreadReminders = reminders.some(r => !r.isRead);
+  
+  // This will be used for the ExpenseDashboard component
+  const dashboardProps = {
+    filteredExpenses,
+    friends,
+    filteredFriends,
+    payments,
+    reminders,
+    paymentMethods: [],
+    hasUnreadReminders,
+    onSettleDebt: settleDebt,
+    onMarkReminderAsRead: handleMarkReminderAsRead,
+    onSettleReminder: openSettlementDialog
+  };
 
   return (
     <div className="container px-4 py-8 mx-auto max-w-7xl">
@@ -83,52 +100,28 @@ export default function Home() {
           <GroupHeader
             selectedGroupId={selectedGroupId}
             onClearSelection={() => setSelectedGroupId(null)}
-            handleCreateGroup={handleCreateGroup}
+            handleCreateGroup={addGroup}
             friends={friends}
             groups={groups}
           />
 
-          {/* Add expense dialog */}
-          <AddExpenseDialog
-            isOpen={isAddExpenseOpen}
-            onClose={() => setIsAddExpenseOpen(false)}
-            onAddExpense={handleAddNewExpense}
-            friends={filteredFriends}
-          />
-
-          {/* Settlement dialog */}
-          <SettlementDialog
-            isOpen={isSettlementOpen}
-            onClose={() => setIsSettlementOpen(false)}
-            onSettle={handleSettleUp}
-            reminder={selectedReminder}
-          />
-
-          {/* Balance summary */}
+          {/* Balance summary without passing balances directly */}
           <BalanceSummary
-            balances={balances}
-            onAddExpense={() => setIsAddExpenseOpen(true)}
+            expenses={filteredExpenses}
+            friends={filteredFriends}
+            payments={payments}
           />
 
           {/* Main content tabs */}
           <Tabs defaultValue="dashboard" className="mt-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="expenses">Expenses & Reminders</TabsTrigger>
+              <TabsTrigger value="expenses">Expenses</TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard" className="mt-4">
-              <ExpenseDashboard
-                expenses={filteredExpenses}
-                friends={filteredFriends}
-                payments={payments}
-                reminders={reminders}
-                balances={balances}
-                onAddExpense={() => setIsAddExpenseOpen(true)}
-                onSettleUp={openSettlementDialog}
-                filteredExpenses={filteredExpenses}
-                filteredFriends={filteredFriends}
-                selectedGroupId={selectedGroupId}
+              <ExpenseDashboard 
+                {...dashboardProps}
               />
             </TabsContent>
 
@@ -136,13 +129,20 @@ export default function Home() {
               <ExpenseTabContent
                 expenses={filteredExpenses}
                 friends={filteredFriends}
-                reminders={reminders}
-                onMarkReminderAsRead={handleMarkReminderAsRead}
-                onSettleReminder={openSettlementDialog}
-                payments={payments}
               />
             </TabsContent>
           </Tabs>
+          
+          {/* Dialogs */}
+          <AddExpenseDialog
+            onAddExpense={handleAddNewExpense}
+            friends={filteredFriends}
+          />
+          
+          <SettlementDialog
+            onSettle={handleSettleUp}
+            reminder={selectedReminder}
+          />
         </div>
       </div>
     </div>

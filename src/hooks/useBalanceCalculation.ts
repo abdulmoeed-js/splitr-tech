@@ -1,12 +1,8 @@
 
 import { Friend, Expense, SettlementPayment } from "@/types/expense";
 
-export const useBalanceCalculation = (
-  friends: Friend[], 
-  expenses: Expense[], 
-  payments: SettlementPayment[]
-) => {
-  const calculateBalances = () => {
+export const useBalanceCalculation = () => {
+  const calculateBalances = (expenses: Expense[], friends: Friend[]) => {
     // Calculate what each person owes to others
     const balances: Record<string, Record<string, number>> = {};
     
@@ -29,25 +25,12 @@ export const useBalanceCalculation = (
         
         if (payer !== debtor) {
           // Debtor owes payer
-          balances[debtor][payer] += split.amount;
+          balances[debtor][payer] = (balances[debtor][payer] || 0) + split.amount;
           
           // Payer is owed by debtor (negative entry)
-          balances[payer][debtor] -= split.amount;
+          balances[payer][debtor] = (balances[payer][debtor] || 0) - split.amount;
         }
       });
-    });
-    
-    // Process payments
-    payments.forEach(payment => {
-      const { fromFriendId, toFriendId, amount } = payment;
-      
-      if (payment.status === "completed") {
-        // Reduce what fromFriend owes to toFriend
-        balances[fromFriendId][toFriendId] -= amount;
-        
-        // Reduce what toFriend is owed by fromFriend
-        balances[toFriendId][fromFriendId] += amount;
-      }
     });
     
     // Simplify balances (remove zero or negative amounts)
@@ -62,5 +45,10 @@ export const useBalanceCalculation = (
     return balances;
   };
 
-  return { calculateBalances };
+  const getFilteredExpenses = (expenses: Expense[], selectedGroupId: string | null) => {
+    if (!selectedGroupId) return expenses;
+    return expenses.filter(expense => expense.groupId === selectedGroupId);
+  };
+
+  return { calculateBalances, getFilteredExpenses };
 };

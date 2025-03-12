@@ -7,7 +7,6 @@ import { Friend, Expense, SettlementPayment, PaymentReminder } from "@/types/exp
 import { PaymentMethod } from "@/types/payment";
 
 interface ExpenseDashboardProps {
-  expenses: Expense[];
   filteredExpenses: Expense[];
   friends: Friend[];
   filteredFriends: Friend[];

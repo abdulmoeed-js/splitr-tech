@@ -1,10 +1,14 @@
 
 import { ExpenseList } from "@/components/ExpenseList";
-import { Expense, Friend } from "@/types/expense";
+import { Expense, Friend, PaymentReminder, SettlementPayment } from "@/types/expense";
 
 interface ExpenseTabContentProps {
   expenses: Expense[];
   friends: Friend[];
+  reminders?: PaymentReminder[];
+  onMarkReminderAsRead?: (reminderId: string) => void;
+  onSettleReminder?: (reminder: PaymentReminder) => void;
+  payments?: SettlementPayment[];
 }
 
 export const ExpenseTabContent = ({ expenses, friends }: ExpenseTabContentProps) => {
