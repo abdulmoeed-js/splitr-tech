@@ -1,11 +1,11 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { SettlementPayment } from "@/types/expense";
 import { Friend } from "@/types/expense";
 import { format } from "date-fns";
 import { Check, Download, FileText } from "lucide-react";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface PaymentReceiptProps {
   payment: SettlementPayment;
@@ -15,12 +15,9 @@ interface PaymentReceiptProps {
 export const PaymentReceipt = ({ payment, friends }: PaymentReceiptProps) => {
   const fromFriend = friends.find(f => f.id === payment.fromFriendId);
   const toFriend = friends.find(f => f.id === payment.toFriendId);
+  const { formatAmount } = useCurrency();
   
   if (!fromFriend || !toFriend) return null;
-
-  const formatCurrency = (amount: number) => {
-    return `Rs. ${parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}`;
-  };
 
   return (
     <Dialog>
@@ -58,7 +55,7 @@ export const PaymentReceipt = ({ payment, friends }: PaymentReceiptProps) => {
             
             <div className="flex justify-between">
               <span className="text-muted-foreground">Amount:</span>
-              <span className="font-medium">{formatCurrency(payment.amount)}</span>
+              <span className="font-medium">{formatAmount(payment.amount)}</span>
             </div>
             
             <div className="flex justify-between">

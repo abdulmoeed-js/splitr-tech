@@ -3,7 +3,6 @@ import {
   User, 
   Bell, 
   Lock, 
-  DollarSign, 
   CreditCard, 
   ChevronRight
 } from "lucide-react";

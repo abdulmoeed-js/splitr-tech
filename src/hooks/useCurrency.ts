@@ -15,6 +15,15 @@ export interface CurrencyPreference {
   currency: SupportedCurrency;
 }
 
+// Define a type for the user preferences
+interface UserPreference {
+  id: string;
+  user_id: string;
+  currency: SupportedCurrency;
+  created_at: string;
+  updated_at: string;
+}
+
 export const useCurrency = () => {
   const { user } = useSession();
   const [currencyPreference, setCurrencyPreference] = useState<CurrencyPreference>({ currency: "PKR" });
@@ -28,9 +37,11 @@ export const useCurrency = () => {
       }
 
       try {
+        // Since we can't use strongly typed Supabase query for user_preferences yet,
+        // we'll use a raw query approach
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('currency')
+          .select('*')
           .eq('user_id', user.id)
           .single();
 
@@ -41,7 +52,7 @@ export const useCurrency = () => {
           return;
         }
 
-        if (data) {
+        if (data && data.currency) {
           setCurrencyPreference({ currency: data.currency as SupportedCurrency });
         }
       } catch (error) {
@@ -59,27 +70,38 @@ export const useCurrency = () => {
 
     try {
       // First check if a preference already exists
-      const { data: existingPref } = await supabase
+      const { data: existingPref, error: fetchError } = await supabase
         .from('user_preferences')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // PGRST116 is the error code for "no rows returned"
+        console.error("Error checking existing preferences:", fetchError);
+        return false;
+      }
+
       if (existingPref) {
         // Update existing preference
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('user_preferences')
-          .update({ currency })
+          .update({ currency, updated_at: new Date().toISOString() })
           .eq('user_id', user.id);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
       } else {
         // Insert new preference
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from('user_preferences')
-          .insert({ user_id: user.id, currency });
+          .insert({ 
+            user_id: user.id, 
+            currency, 
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
 
-        if (error) throw error;
+        if (insertError) throw insertError;
       }
 
       // Update local state
