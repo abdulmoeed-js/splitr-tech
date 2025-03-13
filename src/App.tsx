@@ -9,6 +9,8 @@ import { ExpensesProvider } from "@/hooks/useExpenses";
 import Home from "@/pages/Index";
 import ProfilePage from "@/pages/Profile";
 import FriendsPage from "@/pages/Friends";
+import ExpensesPage from "@/pages/Expenses";
+import AddExpense from "@/pages/AddExpense";
 import NotFound from "@/pages/NotFound";
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -45,6 +47,8 @@ function App() {
                             <Route path="/" element={<Home />} />
                             <Route path="/profile" element={<ProfilePage />} />
                             <Route path="/friends" element={<FriendsPage />} />
+                            <Route path="/expenses" element={<ExpensesPage />} />
+                            <Route path="/add-expense" element={<AddExpense />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </div>

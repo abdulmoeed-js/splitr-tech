@@ -1,5 +1,5 @@
 
-import { Home, Wallet, User, PlusCircle, Users } from "lucide-react";
+import { Home, FileText, User, PlusCircle, Users } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export const Footer = () => {
@@ -27,10 +27,10 @@ export const Footer = () => {
           </Link>
         </div>
         <FooterItem 
-          icon={<Wallet className="h-6 w-6" />} 
-          label="Wallet" 
-          to="/wallet" 
-          isActive={currentPath === '/wallet'} 
+          icon={<FileText className="h-6 w-6" />} 
+          label="Expenses" 
+          to="/expenses" 
+          isActive={currentPath === '/expenses'} 
         />
         <FooterItem 
           icon={<User className="h-6 w-6" />} 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -22,15 +21,19 @@ interface AddExpenseDialogProps {
   onAddExpense: (description: string, amount: number, paidBy: string, splits: Split[]) => void;
   onAddFriend: (name: string, email?: string, phone?: string) => void;
   onInviteFriend: (email?: string, phone?: string) => void;
+  autoOpen?: boolean;
+  onClose?: () => void;
 }
 
 export function AddExpenseDialog({ 
   friends, 
   onAddExpense, 
   onAddFriend,
-  onInviteFriend
+  onInviteFriend,
+  autoOpen = false,
+  onClose
 }: AddExpenseDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState(friends[0]?.id || "");
@@ -45,6 +48,21 @@ export function AddExpenseDialog({
   const [splitType, setSplitType] = useState<"equal" | "custom">("equal");
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
+
+  useEffect(() => {
+    setPaidBy(friends[0]?.id || "");
+  }, [friends]);
+
+  useEffect(() => {
+    setOpen(autoOpen);
+  }, [autoOpen]);
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen && onClose) {
+      onClose();
+    }
+  };
 
   useEffect(() => {
     // When selected friends change, update splits accordingly
@@ -173,7 +191,7 @@ export function AddExpenseDialog({
   const isBalanced = !isNaN(amountValue) && Math.abs(totalSplitAmount - amountValue) < 0.01;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange} data-add-expense-dialog>
       <DialogTrigger asChild>
         <Button className="rounded-full">
           <PlusCircle className="mr-2 h-4 w-4" /> Add Expense
