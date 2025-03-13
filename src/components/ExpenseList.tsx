@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Receipt, User, Users } from "lucide-react";
 import { Expense, Friend, FriendGroup } from "@/types/expense";
-import { useCurrency } from "@/hooks/useCurrency";
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -13,12 +12,14 @@ interface ExpenseListProps {
 }
 
 export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps) => {
-  const { formatAmount } = useCurrency();
-
   // Sort expenses by date, most recent first
   const sortedExpenses = [...expenses].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
+
+  const formatCurrency = (amount: number) => {
+    return `Rs. ${parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}`;
+  };
 
   return (
     <div className="space-y-4">
@@ -50,7 +51,7 @@ export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-primary">{formatAmount(expense.amount)}</p>
+                <p className="text-lg font-bold text-primary">{formatCurrency(expense.amount)}</p>
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
                   <User className="w-3 h-3 mr-1" />
                   <span>
