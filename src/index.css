@@ -7,25 +7,25 @@
 
 @layer base {
   :root {
-    --background: 11 100% 94%;
+    --background: 9 100% 95%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 25 95% 53%; /* Changed to orange */
+    --primary: 12 91% 74%; /* Coral/peach color */
     --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 11 50% 96%;
-    --secondary-foreground: 10 80% 35%;
-    --muted: 11 20% 96%;
+    --secondary: 9 30% 95%;
+    --secondary-foreground: 12 50% 40%;
+    --muted: 9 20% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 11 70% 90%;
-    --accent-foreground: 10 80% 74%;
+    --accent: 9 70% 90%;
+    --accent-foreground: 12 90% 70%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 11 20% 90%;
-    --input: 11 20% 90%;
-    --ring: 10 80% 74%;
+    --border: 9 20% 90%;
+    --input: 9 20% 90%;
+    --ring: 12 80% 74%;
     --radius: 1rem;
   }
 }
@@ -37,7 +37,7 @@
   body {
     @apply bg-background text-foreground font-inter antialiased;
     /* Add mobile-first styles */
-    @apply bg-black text-white;
+    @apply bg-[#FFF0ED] text-gray-800;
     @apply overflow-x-hidden;
     max-width: 100vw;
   }
@@ -49,11 +49,11 @@
 }
 
 .glass-panel {
-  @apply bg-black/70 backdrop-blur-sm border border-white/10 shadow-lg rounded-2xl;
+  @apply bg-white/90 backdrop-blur-sm border border-primary/20 shadow-lg rounded-2xl;
 }
 
 .glass-card {
-  @apply bg-gray-800/50 backdrop-blur-sm border border-white/5 rounded-xl transition-all hover:border-primary/20;
+  @apply bg-white/80 backdrop-blur-sm border border-primary/10 rounded-xl transition-all hover:border-primary/30;
 }
 
 @keyframes slideUp {
@@ -93,7 +93,7 @@
 }
 
 .border-gradient {
-  @apply border border-white/10 hover:border-primary/20 transition-colors;
+  @apply border border-primary/10 hover:border-primary/30 transition-colors;
 }
 
 /* Mobile Navigation styles */
@@ -115,7 +115,7 @@
 
 /* Page headers for mobile app look */
 .page-header {
-  @apply fixed top-0 left-0 right-0 z-10 bg-black/70 backdrop-blur-lg border-b border-white/10;
+  @apply fixed top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-lg border-b border-primary/10;
   @apply flex items-center justify-between p-4;
 }
 

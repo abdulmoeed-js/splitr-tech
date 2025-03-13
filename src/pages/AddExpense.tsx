@@ -8,7 +8,7 @@ import { useExpenses } from "@/hooks/useExpenses";
 export default function AddExpense() {
   const navigate = useNavigate();
   const { friends } = useFriends();
-  const { addExpense, addFriend, inviteFriend } = useExpenses();
+  const { expenses, handleAddExpense, handleAddFriend, handleInviteFriend } = useExpenses();
 
   // Automatically open the AddExpenseDialog and navigate back when closed
   useEffect(() => {
@@ -44,9 +44,9 @@ export default function AddExpense() {
         autoOpen={true} 
         onClose={() => navigate("/")} 
         friends={friends}
-        onAddExpense={addExpense}
-        onAddFriend={addFriend}
-        onInviteFriend={inviteFriend}
+        onAddExpense={handleAddExpense}
+        onAddFriend={handleAddFriend}
+        onInviteFriend={handleInviteFriend}
       />
     </div>
   );
