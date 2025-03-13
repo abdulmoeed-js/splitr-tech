@@ -25,7 +25,7 @@ export const UserProfileCard = ({ user }: UserProfileCardProps) => {
             <User className="w-12 h-12 text-gray-400" />
           )}
         </div>
-        <div className="absolute bottom-0 right-0 bg-purple-500 p-1.5 rounded-full shadow-lg">
+        <div className="absolute bottom-0 right-0 bg-gradient-to-r from-purple-500 to-pink-500 p-1.5 rounded-full shadow-lg">
           <Camera className="h-4 w-4 text-white" />
         </div>
       </div>
@@ -36,9 +36,9 @@ export const UserProfileCard = ({ user }: UserProfileCardProps) => {
       {/* Balance Display */}
       <div className="mt-6 w-full">
         <div className="text-center">
-          <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-6 rounded-xl backdrop-blur-sm border border-white/10">
+          <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-white/10 hover:border-purple-500/20 transition-colors">
             <p className="text-sm font-medium text-gray-400 mb-1">Current Balance</p>
-            <span className="text-3xl font-bold text-gradient bg-gradient-to-r from-purple-400 to-pink-400">{formatAmount(1860)}</span>
+            <span className="text-3xl font-bold text-gradient">{formatAmount(1860)}</span>
             <div className="text-gray-400 text-sm mt-1 flex items-center justify-center">
               <span>{currencyPreference.currency}</span>
               <svg className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
