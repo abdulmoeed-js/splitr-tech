@@ -1,144 +1,147 @@
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { PaymentMethodsList } from "@/components/profile/PaymentMethodsList";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PaymentMethodsList } from "./PaymentMethodsList";
-import { AddPaymentMethodForm } from "./AddPaymentMethodForm";
+import { Plus, CreditCard } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { AddPaymentMethodForm } from "@/components/profile/AddPaymentMethodForm";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/components/ui/use-toast";
 
 export const PaymentMethodsTab = () => {
-  const { 
-    paymentMethods, 
-    loading,
-    preferredPaymentMethodId,
-    addPaymentMethod, 
-    removePaymentMethod, 
-    setPreferredMethod 
-  } = usePaymentMethods();
-  
+  const { paymentMethods, loading, preferredPaymentMethodId, removePaymentMethod, setPreferredMethod } = usePaymentMethods();
   const { user } = useAuth();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [currency, setCurrency] = useState("USD");
-  const [isCurrencyLoading, setIsCurrencyLoading] = useState(false);
-
+  
   useEffect(() => {
-    // Fetch user's currency preference
-    if (user) {
-      const fetchCurrency = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('user_preferences')
-            .select('currency')
-            .eq('user_id', user.id)
-            .single();
-          
-          if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found", which is ok
-          
-          if (data) {
-            setCurrency(data.currency);
-          }
-        } catch (error) {
-          console.error("Error fetching currency:", error);
-        }
-      };
+    const fetchCurrency = async () => {
+      if (!user) return;
       
-      fetchCurrency();
-    }
+      try {
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('currency')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching currency:", error);
+          return;
+        }
+        
+        if (data?.currency) {
+          setCurrency(data.currency);
+        }
+      } catch (error) {
+        console.error("Error in fetchCurrency:", error);
+      }
+    };
+    
+    fetchCurrency();
   }, [user]);
-
-  const handleChangeCurrency = async (value: string) => {
+  
+  const handleCurrencyChange = async (value: string) => {
     if (!user) return;
     
-    setIsCurrencyLoading(true);
     try {
       const { error } = await supabase
         .from('user_preferences')
         .upsert({ 
-          user_id: user.id,
-          currency: value
-        }, { onConflict: 'user_id' });
+          user_id: user.id, 
+          currency: value 
+        }, { 
+          onConflict: 'user_id' 
+        });
       
       if (error) throw error;
       
       setCurrency(value);
+      
       toast({
-        title: "Currency updated",
-        description: `Your account currency has been set to ${value}`,
+        title: "Currency Updated",
+        description: `Your preferred currency is now ${value}`
       });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error updating currency",
-        description: error.message || "An error occurred while updating your currency",
+        title: "Error",
+        description: error.message || "Failed to update currency"
       });
-    } finally {
-      setIsCurrencyLoading(false);
     }
   };
-  
+
   return (
-    <>
-      <div className="space-y-6">
-        {/* Currency selector */}
-        <div className="bg-accent/10 rounded-lg p-4">
-          <label className="block text-sm mb-2">Account Currency</label>
-          <Select
-            value={currency}
-            onValueChange={handleChangeCurrency}
-            disabled={isCurrencyLoading}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select currency" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USD">US Dollar (USD)</SelectItem>
-              <SelectItem value="EUR">Euro (EUR)</SelectItem>
-              <SelectItem value="PKR">Pakistani Rupee (PKR)</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-primary/70 mt-2">
-            This currency will be used throughout the app
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Currency Selector */}
+      <div className="bg-accent/10 rounded-xl p-4">
+        <h3 className="font-medium mb-3">Account Currency</h3>
+        <p className="text-sm text-primary/70 mb-4">
+          Select your preferred currency for all transactions
+        </p>
         
+        <RadioGroup 
+          value={currency} 
+          onValueChange={handleCurrencyChange}
+          className="space-y-2"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="USD" id="usd" />
+            <Label htmlFor="usd">US Dollar (USD)</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="EUR" id="eur" />
+            <Label htmlFor="eur">Euro (EUR)</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="PKR" id="pkr" />
+            <Label htmlFor="pkr">Pakistani Rupee (PKR)</Label>
+          </div>
+        </RadioGroup>
+      </div>
+      
+      {/* Payment Methods List */}
+      <div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Your Payment Methods</h2>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <h3 className="font-medium">My Payment Methods</h3>
+          <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="rounded-full">
-                <Plus className="h-4 w-4" />
+              <Button size="sm" className="flex items-center">
+                <Plus className="mr-1 h-4 w-4" /> Add
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Payment Method</DialogTitle>
               </DialogHeader>
-              <AddPaymentMethodForm 
-                onAddPaymentMethod={addPaymentMethod} 
-                onClose={() => setDialogOpen(false)} 
-              />
+              <AddPaymentMethodForm onSuccess={() => setIsAddPaymentOpen(false)} />
             </DialogContent>
           </Dialog>
         </div>
 
         {loading ? (
-          <div className="p-6 text-center bg-accent/10 rounded-xl">
-            <p className="text-primary/70">Loading payment methods...</p>
+          <div className="flex justify-center py-8">
+            <div className="animate-spin h-6 w-6 border-2 border-primary/20 border-t-primary rounded-full"></div>
           </div>
         ) : (
-          <PaymentMethodsList 
-            paymentMethods={paymentMethods} 
+          <PaymentMethodsList
+            paymentMethods={paymentMethods}
             preferredMethodId={preferredPaymentMethodId}
             onRemovePaymentMethod={removePaymentMethod}
             onSetPreferredMethod={setPreferredMethod}
           />
         )}
       </div>
-    </>
+    </div>
   );
 };

@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfileCard } from "@/components/profile/UserProfileCard";
 import { PaymentMethodsTab } from "@/components/profile/PaymentMethodsTab";
 import { Search, Bell, ChevronLeft } from "lucide-react";
@@ -41,7 +40,7 @@ const Profile = () => {
       <div className="container max-w-md mx-auto px-4 pb-24">
         <UserProfileCard user={profileUser} />
         
-        {/* Only Payment Methods tab now */}
+        {/* Payment Methods section */}
         <div className="mt-8">
           <h2 className="text-lg font-semibold mb-4">Payment Methods</h2>
           <PaymentMethodsTab />
