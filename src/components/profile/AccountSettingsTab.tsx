@@ -31,21 +31,21 @@ export const AccountSettingsTab = () => {
     <div className="space-y-6">
       {settingsCategories.map((category, index) => (
         <div key={index} className="space-y-2">
-          <h3 className="text-sm text-gray-500">{category.title}</h3>
+          <h3 className="text-sm text-primary/70">{category.title}</h3>
           <div className="space-y-2">
             {category.items.map((item, itemIndex) => (
               <a 
                 key={itemIndex} 
                 href={item.link} 
-                className="flex items-center justify-between p-3 bg-gray-800 rounded-lg hover:bg-gray-700"
+                className="flex items-center justify-between p-3 bg-accent/10 rounded-lg hover:bg-accent/20"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-yellow-500">
+                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-primary">
                     {item.icon}
                   </div>
                   <span>{item.label}</span>
                 </div>
-                <div className="flex items-center text-gray-400">
+                <div className="flex items-center text-primary/70">
                   {item.value && <span className="mr-1">{item.value}</span>}
                   <ChevronRight size={16} />
                 </div>

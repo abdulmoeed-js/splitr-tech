@@ -43,7 +43,7 @@ export const useRemoveFriend = (session: Session | null, friends: Friend[]) => {
         description: `${removedFriend?.name || 'Friend'} has been removed from your friends list.`
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Cannot Remove Friend",
         description: error.message || "An error occurred while removing friend",
