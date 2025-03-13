@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfileCard } from "@/components/profile/UserProfileCard";
 import { PaymentMethodsTab } from "@/components/profile/PaymentMethodsTab";
 import { Search, Bell, ChevronLeft } from "lucide-react";
-import { AccountSettingsTab } from "@/components/profile/AccountSettingsTab";
 import { useAuth } from "@/hooks/useAuth";
 
 const Profile = () => {
@@ -22,11 +21,12 @@ const Profile = () => {
     fullName: user?.email?.split('@')[0] || "User",
     primaryEmailAddress: user?.email,
     // Convert Date to string to match our interface
-    createdAt: user?.created_at || new Date().toISOString()
+    createdAt: user?.created_at || new Date().toISOString(),
+    phoneNumbers: []
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-background">
         <ChevronLeft className="h-6 w-6 text-primary" />
@@ -41,20 +41,11 @@ const Profile = () => {
       <div className="container max-w-md mx-auto px-4 pb-24">
         <UserProfileCard user={profileUser} />
         
-        <Tabs defaultValue="payment" className="mt-8">
-          <TabsList className="grid w-full grid-cols-2 rounded-full bg-accent/20 p-1">
-            <TabsTrigger value="payment" className="rounded-full text-sm">Payment Methods</TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-full text-sm">Account Settings</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="payment" className="mt-6">
-            <PaymentMethodsTab />
-          </TabsContent>
-
-          <TabsContent value="settings" className="mt-6">
-            <AccountSettingsTab />
-          </TabsContent>
-        </Tabs>
+        {/* Only Payment Methods tab now */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Payment Methods</h2>
+          <PaymentMethodsTab />
+        </div>
       </div>
 
       {/* Bottom Navigation */}

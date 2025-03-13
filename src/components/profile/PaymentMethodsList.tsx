@@ -19,9 +19,9 @@ export const PaymentMethodsList = ({
 }: PaymentMethodsListProps) => {
   if (paymentMethods.length === 0) {
     return (
-      <div className="p-6 text-center bg-gray-800 rounded-xl">
-        <CreditCard className="mx-auto h-12 w-12 text-gray-500 mb-2" />
-        <p className="text-gray-500">No payment methods added yet</p>
+      <div className="p-6 text-center bg-accent/10 rounded-xl">
+        <CreditCard className="mx-auto h-12 w-12 text-primary/50 mb-2" />
+        <p className="text-primary/70">No payment methods added yet</p>
       </div>
     );
   }
@@ -35,9 +35,9 @@ export const PaymentMethodsList = ({
         
         switch (method.type) {
           case "card":
-            icon = <CreditCard className="h-5 w-5 text-white" />;
+            icon = <CreditCard className="h-5 w-5" />;
             details = method.lastFour && (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-primary/70">
                 •••• {method.lastFour} {method.expiryDate && `• Expires ${method.expiryDate}`}
               </p>
             );
@@ -45,40 +45,40 @@ export const PaymentMethodsList = ({
             break;
           case "easypaisa":
           case "jazzcash":
-            icon = <Smartphone className="h-5 w-5 text-white" />;
+            icon = <Smartphone className="h-5 w-5" />;
             details = method.phoneNumber && (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-primary/70">
                 {method.phoneNumber.substring(0, 3)}••••{method.phoneNumber.substring(7)}
               </p>
             );
             break;
           case "bank":
-            icon = <Building className="h-5 w-5 text-white" />;
+            icon = <Building className="h-5 w-5" />;
             details = (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-primary/70">
                 {method.bankName} • ••••{method.accountNumber?.substring(method.accountNumber.length - 4)}
               </p>
             );
             break;
           default:
-            icon = <CreditCard className="h-5 w-5 text-white" />;
+            icon = <CreditCard className="h-5 w-5" />;
             details = null;
         }
         
         const isPreferred = method.id === preferredMethodId;
         
         return (
-          <div key={method.id} className="p-4 bg-gray-800 rounded-xl">
+          <div key={method.id} className="p-4 bg-accent/10 rounded-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div className="p-2 bg-gray-700 rounded-xl">
+                <div className="p-2 bg-accent/20 rounded-xl">
                   {icon}
                 </div>
                 <div>
                   <div className="flex items-center">
                     <h3 className="font-semibold">{method.name}</h3>
                     {isPreferred && (
-                      <span className="ml-2 bg-yellow-500 text-black text-xs px-2 py-0.5 rounded-full">
+                      <span className="ml-2 bg-primary/20 text-primary text-xs px-2 py-0.5 rounded-full">
                         Preferred
                       </span>
                     )}
@@ -94,13 +94,13 @@ export const PaymentMethodsList = ({
               )}
             </div>
             
-            <div className="flex justify-between mt-3 pt-3 border-t border-gray-700">
+            <div className="flex justify-between mt-3 pt-3 border-t border-border">
               {!isPreferred && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => onSetPreferredMethod(method.id)}
-                  className="text-gray-400 hover:text-white text-xs"
+                  className="text-primary/70 hover:text-primary text-xs"
                 >
                   <Check className="h-3 w-3 mr-1" /> Set as preferred
                 </Button>
@@ -110,7 +110,7 @@ export const PaymentMethodsList = ({
                 variant="ghost" 
                 size="sm" 
                 onClick={() => onRemovePaymentMethod(method.id)}
-                className="text-red-500 hover:text-red-400 text-xs ml-auto"
+                className="text-destructive hover:text-destructive/80 text-xs ml-auto"
               >
                 <Trash2 className="h-3 w-3 mr-1" /> Remove
               </Button>
