@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PaymentMethod } from "@/types/payment";
-import { toast } from "@/components/ui/use-toast";
 import { PaymentFormProvider } from "./PaymentFormContext";
 import { PaymentMethodTypeSelect } from "./payment-methods/PaymentMethodTypeSelect";
 import { PaymentMethodNameInput } from "./payment-methods/PaymentMethodNameInput";
@@ -10,8 +9,8 @@ import { CardPaymentForm } from "./payment-methods/CardPaymentForm";
 import { MobileWalletForm } from "./payment-methods/MobileWalletForm";
 import { BankAccountForm } from "./payment-methods/BankAccountForm";
 
-interface AddPaymentMethodFormProps {
-  onAddPaymentMethod: (paymentMethod: PaymentMethod) => void;
+export interface AddPaymentMethodFormProps {
+  onAddPaymentMethod: (paymentMethod: Omit<PaymentMethod, 'id' | 'created'>) => void;
   onClose: () => void;
 }
 
@@ -28,7 +27,7 @@ export const AddPaymentMethodForm = ({
     // Get form elements
     const form = e.target as HTMLFormElement;
     
-    let newMethod: PaymentMethod;
+    let newMethod: Omit<PaymentMethod, 'id' | 'created'>;
     
     switch (methodType) {
       case "card":
@@ -36,12 +35,10 @@ export const AddPaymentMethodForm = ({
         const cardExpiry = (form.querySelector('#cardExpiry') as HTMLInputElement).value;
         
         newMethod = {
-          id: Date.now().toString(),
           type: "card",
           name: methodName || "Credit/Debit Card",
           lastFour: cardNumber.slice(-4),
           expiryDate: cardExpiry,
-          created: new Date(),
           isDefault: false
         };
         break;
@@ -51,11 +48,9 @@ export const AddPaymentMethodForm = ({
         const phoneNumber = (form.querySelector('#phoneNumber') as HTMLInputElement).value;
         
         newMethod = {
-          id: Date.now().toString(),
           type: methodType as "easypaisa" | "jazzcash",
           name: methodName || (methodType === "easypaisa" ? "EasyPaisa" : "JazzCash"),
           phoneNumber,
-          created: new Date(),
           isDefault: false
         };
         break;
@@ -66,12 +61,10 @@ export const AddPaymentMethodForm = ({
         const accountNumber = (form.querySelector('#accountNumber') as HTMLInputElement).value;
         
         newMethod = {
-          id: Date.now().toString(),
           type: "bank",
           name: methodName || "Bank Account",
           bankName,
           accountNumber,
-          created: new Date(),
           isDefault: false
         };
         break;

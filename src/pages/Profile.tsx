@@ -21,7 +21,6 @@ const Profile = () => {
     primaryEmailAddress: user?.email,
     // Convert Date to string to match our interface
     createdAt: user?.created_at || new Date().toISOString(),
-    phoneNumbers: []
   };
 
   return (

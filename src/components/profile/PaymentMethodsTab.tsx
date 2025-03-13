@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 export const PaymentMethodsTab = () => {
-  const { paymentMethods, loading, preferredPaymentMethodId, removePaymentMethod, setPreferredMethod } = usePaymentMethods();
+  const { paymentMethods, loading, preferredPaymentMethodId, removePaymentMethod, setPreferredMethod, addPaymentMethod } = usePaymentMethods();
   const { user } = useAuth();
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [currency, setCurrency] = useState("USD");
@@ -124,7 +124,10 @@ export const PaymentMethodsTab = () => {
               <DialogHeader>
                 <DialogTitle>Add Payment Method</DialogTitle>
               </DialogHeader>
-              <AddPaymentMethodForm onSuccess={() => setIsAddPaymentOpen(false)} />
+              <AddPaymentMethodForm 
+                onAddPaymentMethod={addPaymentMethod} 
+                onClose={() => setIsAddPaymentOpen(false)} 
+              />
             </DialogContent>
           </Dialog>
         </div>
