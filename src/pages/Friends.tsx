@@ -1,37 +1,35 @@
 
-import { AuthWrapper } from "@/components/AuthWrapper";
-import { FriendsManagement } from "@/components/friends/FriendsManagement";
 import { useExpenses } from "@/hooks/useExpenses";
+import { FriendsManagement } from "@/components/friends/FriendsManagement";
 
-const Friends = () => {
-  const {
-    isLoaded,
-    friends,
-    handleAddFriend,
-    handleUpdateFriend,
-    handleInviteFriend,
-    handleRemoveFriend
+const FriendsPage = () => {
+  const { 
+    isLoaded, 
+    friends, 
+    handleAddFriend, 
+    handleUpdateFriend, 
+    handleInviteFriend, 
+    handleRemoveFriend 
   } = useExpenses();
 
   return (
-    <AuthWrapper>
-      <div className="container max-w-2xl py-8 px-4">
-        {!isLoaded ? (
-          <div className="flex items-center justify-center min-h-[50vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <FriendsManagement
-            friends={friends}
-            onAddFriend={handleAddFriend}
-            onUpdateFriend={handleUpdateFriend}
-            onInviteFriend={handleInviteFriend}
-            onRemoveFriend={handleRemoveFriend}
-          />
-        )}
-      </div>
-    </AuthWrapper>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Friends Management</h1>
+      {isLoaded ? (
+        <FriendsManagement
+          friends={friends}
+          onAddFriend={handleAddFriend}
+          onUpdateFriend={handleUpdateFriend}
+          onInviteFriend={handleInviteFriend}
+          onRemoveFriend={handleRemoveFriend}
+        />
+      ) : (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      )}
+    </div>
   );
 };
 
-export default Friends;
+export default FriendsPage;

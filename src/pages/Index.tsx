@@ -7,7 +7,7 @@ import { useGroups } from "@/hooks/useGroups";
 import { usePayments } from "@/hooks/usePayments";
 import { useReminders } from "@/hooks/useReminders";
 import { useBalanceCalculation } from "@/hooks/useBalanceCalculation";
-import { Friend, FriendGroup, Expense, PaymentReminder } from "@/types/expense";
+import { Friend, FriendGroup, Expense, PaymentReminder, SettlementPayment } from "@/types/expense";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BalanceSummary } from "@/components/BalanceSummary";
 import { ExpenseDashboard } from "@/components/expenses/ExpenseDashboard";
@@ -52,10 +52,11 @@ export default function Home() {
     setIsSettlementOpen(true);
   };
 
-  const handleSettleUp = (paymentMethod: string, amount: number) => {
+  const handleSettleUp = (payment: SettlementPayment) => {
     if (selectedReminder) {
       handleSettleReminder(selectedReminder);
     }
+    settleDebt(payment);
     setIsSettlementOpen(false);
     setSelectedReminder(null);
   };

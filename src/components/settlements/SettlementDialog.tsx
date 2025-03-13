@@ -28,7 +28,7 @@ export const SettlementDialog = ({
   const [open, setOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank">("in-app");
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>("");
-  const [settlementAmount, setSettlementAmount] = useState(amount.toFixed(2));
+  const [settlementAmount, setSettlementAmount] = useState(amount ? amount.toFixed(2) : "0.00");
 
   // Filter payment methods by type
   const getPaymentMethodsByType = (type: string) => {
