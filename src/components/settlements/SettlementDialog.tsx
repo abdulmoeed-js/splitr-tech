@@ -9,6 +9,7 @@ import { Friend, SettlementPayment } from "@/types/expense";
 import { PaymentMethod } from "@/types/payment";
 import { toast } from "@/components/ui/use-toast";
 import { CreditCard, Wallet, ArrowRight, Smartphone, Building } from "lucide-react";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface SettlementDialogProps {
   fromFriend: Friend;
@@ -29,6 +30,8 @@ export const SettlementDialog = ({
   const [paymentMethod, setPaymentMethod] = useState<"in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank">("in-app");
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>("");
   const [settlementAmount, setSettlementAmount] = useState(amount ? amount.toFixed(2) : "0.00");
+  
+  const { formatAmount, currencyPreference } = useCurrency();
 
   // Filter payment methods by type
   const getPaymentMethodsByType = (type: string) => {
@@ -55,7 +58,7 @@ export const SettlementDialog = ({
     
     toast({
       title: "Payment Successful",
-      description: `You paid ${toFriend.name} Rs. ${settlementAmount}`
+      description: `You paid ${toFriend.name} ${formatAmount(Number(settlementAmount))}`
     });
   };
 
@@ -77,12 +80,12 @@ export const SettlementDialog = ({
                 <ArrowRight className="h-4 w-4 text-primary" />
                 <span>{toFriend.name}</span>
               </div>
-              <div className="font-semibold">Rs. {parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}</div>
+              <div className="font-semibold">{formatAmount(amount)}</div>
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount to Pay (PKR)</Label>
+            <Label htmlFor="amount">Amount to Pay ({currencyPreference.currency})</Label>
             <Input
               id="amount"
               type="number"
@@ -237,7 +240,7 @@ export const SettlementDialog = ({
           )}
           
           <Button type="submit" className="w-full">
-            Pay Rs. {parseFloat(settlementAmount).toLocaleString('en-PK')}
+            Pay {formatAmount(Number(settlementAmount))}
           </Button>
         </form>
       </DialogContent>

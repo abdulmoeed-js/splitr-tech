@@ -7,14 +7,17 @@ import {
   CreditCard, 
   ChevronRight
 } from "lucide-react";
+import { CurrencySelector } from "./CurrencySelector";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export const AccountSettingsTab = () => {
+  const { currencyPreference, updateCurrencyPreference } = useCurrency();
+
   const settingsCategories = [
     {
       title: "General",
       items: [
         { icon: <User size={18} />, label: "Categories", value: "8 Categories", link: "#" },
-        { icon: <DollarSign size={18} />, label: "Account Currency", value: "USD", link: "#" },
       ]
     },
     {
@@ -54,6 +57,15 @@ export const AccountSettingsTab = () => {
           </div>
         </div>
       ))}
+
+      {/* Currency Settings */}
+      <div className="space-y-2">
+        <h3 className="text-sm text-gray-500">Currency</h3>
+        <CurrencySelector 
+          currentCurrency={currencyPreference.currency} 
+          onCurrencyChange={updateCurrencyPreference}
+        />
+      </div>
     </div>
   );
 };

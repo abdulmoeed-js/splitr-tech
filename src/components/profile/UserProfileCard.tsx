@@ -1,5 +1,6 @@
 
 import { User, Camera } from "lucide-react";
+import { useCurrency } from "@/hooks/useCurrency";
 
 // Define our own interface that matches what we need from the Clerk user
 interface UserProfileCardProps {
@@ -12,6 +13,8 @@ interface UserProfileCardProps {
 }
 
 export const UserProfileCard = ({ user }: UserProfileCardProps) => {
+  const { currencyPreference, formatAmount } = useCurrency();
+
   return (
     <div className="flex flex-col items-center pb-6 pt-4">
       <div className="relative">
@@ -33,9 +36,9 @@ export const UserProfileCard = ({ user }: UserProfileCardProps) => {
       {/* Balance Display */}
       <div className="mt-6 w-full">
         <div className="text-center">
-          <span className="text-3xl font-bold">$ 1,860</span>
+          <span className="text-3xl font-bold">{formatAmount(1860)}</span>
           <div className="text-gray-400 text-sm mt-1 flex items-center justify-center">
-            <span>USD</span>
+            <span>{currencyPreference.currency}</span>
             <svg className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>

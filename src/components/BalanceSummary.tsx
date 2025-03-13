@@ -5,6 +5,7 @@ import { ArrowRight, Wallet, TrendingUp, TrendingDown, Receipt } from "lucide-re
 import { Friend, Expense, SettlementPayment } from "@/types/expense";
 import { PaymentMethod } from "@/types/payment";
 import { format } from "date-fns";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface BalanceSummaryProps {
   expenses: Expense[];
@@ -21,6 +22,8 @@ export const BalanceSummary = ({
   paymentMethods = [],
   onSettleDebt
 }: BalanceSummaryProps) => {
+  const { formatAmount } = useCurrency();
+
   const calculateBalances = () => {
     const balances: Record<string, number> = {};
     friends.forEach((friend) => {
@@ -110,10 +113,6 @@ export const BalanceSummary = ({
 
   const debts = calculateDebts();
 
-  const formatCurrency = (amount: number) => {
-    return `Rs. ${parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}`;
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -133,7 +132,7 @@ export const BalanceSummary = ({
                     <TrendingDown className="w-4 h-4 text-red-500" />
                   )}
                   <span className={`font-semibold ${balances[friend.id] >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {formatCurrency(Math.abs(balances[friend.id]))}
+                    {formatAmount(Math.abs(balances[friend.id]))}
                   </span>
                 </div>
               </div>
@@ -165,7 +164,7 @@ export const BalanceSummary = ({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-primary">
-                          {formatCurrency(debt.amount)}
+                          {formatAmount(debt.amount)}
                         </span>
                         
                         {/* Only show settle up button if the current user is the debtor */}
@@ -219,7 +218,7 @@ export const BalanceSummary = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-primary">
-                            {formatCurrency(payment.amount)}
+                            {formatAmount(payment.amount)}
                           </span>
                           <PaymentReceipt payment={payment} friends={friends} />
                         </div>
