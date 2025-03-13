@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserProfileCard } from "@/components/profile/UserProfileCard";
 import { PaymentMethodsTab } from "@/components/profile/PaymentMethodsTab";
-import { Search, Bell, ChevronLeft, Home, Wallet, User, PlusCircle } from "lucide-react";
+import { Search, Bell, ChevronLeft } from "lucide-react";
 import { AccountSettingsTab } from "@/components/profile/AccountSettingsTab";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -57,29 +57,6 @@ const Profile = () => {
             <AccountSettingsTab />
           </TabsContent>
         </Tabs>
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-900/80 backdrop-blur-lg border-t border-white/10 p-4">
-        <div className="flex items-center justify-around">
-          <div className="flex flex-col items-center text-gray-400">
-            <Home className="h-6 w-6" />
-            <span className="text-xs mt-1">Home</span>
-          </div>
-          <div className="flex flex-col items-center text-gray-400">
-            <Wallet className="h-6 w-6" />
-            <span className="text-xs mt-1">Wallet</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="h-14 w-14 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center -mt-8 shadow-lg border-4 border-black">
-              <PlusCircle className="h-8 w-8 text-white" />
-            </div>
-          </div>
-          <div className="flex flex-col items-center text-white">
-            <User className="h-6 w-6" />
-            <span className="text-xs mt-1">Profile</span>
-          </div>
-        </div>
       </div>
     </div>
   );
