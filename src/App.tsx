@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthWrapper, SignInPage, SignUpPage } from "@/components/AuthWrapper";
+import { AuthWrapper, SignInPage, SignUpPage } from "@/components/auth";
 import { ExpensesProvider } from "@/hooks/useExpenses";
 import Home from "@/pages/Index";
 import ProfilePage from "@/pages/Profile";
