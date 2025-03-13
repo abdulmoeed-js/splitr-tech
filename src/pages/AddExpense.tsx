@@ -2,9 +2,13 @@
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { useFriends } from "@/hooks/useFriends";
+import { useExpenses } from "@/hooks/useExpenses";
 
 export default function AddExpense() {
   const navigate = useNavigate();
+  const { friends } = useFriends();
+  const { addExpense, addFriend, inviteFriend } = useExpenses();
 
   // Automatically open the AddExpenseDialog and navigate back when closed
   useEffect(() => {
@@ -36,7 +40,14 @@ export default function AddExpense() {
 
   return (
     <div className="h-screen flex items-center justify-center">
-      <AddExpenseDialog autoOpen={true} onClose={() => navigate("/")} />
+      <AddExpenseDialog 
+        autoOpen={true} 
+        onClose={() => navigate("/")} 
+        friends={friends}
+        onAddExpense={addExpense}
+        onAddFriend={addFriend}
+        onInviteFriend={inviteFriend}
+      />
     </div>
   );
 }
