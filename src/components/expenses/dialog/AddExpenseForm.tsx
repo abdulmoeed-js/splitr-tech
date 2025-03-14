@@ -1,14 +1,16 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Friend, Split } from "@/types/expense";
 import { SelectPaidBy } from "./SelectPaidBy";
 import { FriendSelection } from "./FriendSelection";
 import { SplitMethodSelector } from "./SplitMethodSelector";
 import { SplitDetails } from "./SplitDetails";
+import { ExpenseDescription } from "./ExpenseDescription";
+import { ExpenseAmount } from "./ExpenseAmount";
+import { useExpenseFormValidation } from "./hooks/useExpenseFormValidation";
+import { useExpenseFormSubmit } from "./hooks/useExpenseFormSubmit";
 
 interface AddExpenseFormProps {
   friends: Friend[];
@@ -28,6 +30,8 @@ export function AddExpenseForm({
   const [splitMethod, setSplitMethod] = useState<"equal" | "custom" | "percentage">("equal");
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const { toast } = useToast();
+  const { validateExpenseForm } = useExpenseFormValidation();
+  const { submitExpense } = useExpenseFormSubmit();
 
   const resetForm = () => {
     setDescription("");
@@ -84,82 +88,27 @@ export function AddExpenseForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!description.trim() || !amount.trim()) {
-      toast({
-        title: "Please fill in all fields.",
-        variant: "destructive",
-      });
-      return;
-    }
+    const isValid = validateExpenseForm({
+      description,
+      amount,
+      paidBy,
+      selectedFriends,
+      splits,
+      splitMethod,
+      toast
+    });
 
-    const amountValue = parseFloat(amount);
-    if (isNaN(amountValue) || amountValue <= 0) {
-      toast({
-        title: "Please enter a valid amount.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!paidBy) {
-      toast({
-        title: "Please select who paid the expense.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (selectedFriends.length === 0) {
-      toast({
-        title: "Please select at least one friend to split with.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const finalSplits = splits.filter(split => 
-      selectedFriends.includes(split.friendId)
-    );
-
-    if (splitMethod === "percentage") {
-      const totalPercentage = finalSplits.reduce((sum, split) => sum + (split.percentage || 0), 0);
-      if (Math.abs(totalPercentage - 100) > 0.01) {
-        toast({
-          title: "Percentages must add up to 100%",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Convert percentages to amounts
-      finalSplits.forEach(split => {
-        split.amount = (amountValue * (split.percentage || 0)) / 100;
-      });
-    }
-
-    if (finalSplits.length === 0) {
-      toast({
-        title: "Please add at least one split.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      onAddExpense(description, amountValue, paidBy, finalSplits);
-      resetForm();
-      onSuccess();
-      
-      toast({
-        title: "Expense Added",
-        description: "Your expense has been successfully added.",
-      });
-    } catch (error) {
-      console.error("Error adding expense:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An error occurred while adding the expense",
-        variant: "destructive",
+    if (isValid) {
+      submitExpense({
+        description,
+        amount,
+        paidBy,
+        selectedFriends,
+        splits,
+        splitMethod,
+        onAddExpense,
+        onSuccess,
+        resetForm
       });
     }
   };
@@ -180,28 +129,15 @@ export function AddExpenseForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Input
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Expense description"
-          required
-        />
-      </div>
+      <ExpenseDescription 
+        description={description}
+        onDescriptionChange={setDescription}
+      />
       
-      <div className="space-y-2">
-        <Label htmlFor="amount">Amount</Label>
-        <Input
-          id="amount"
-          type="number"
-          value={amount}
-          onChange={(e) => handleAmountChange(e.target.value)}
-          placeholder="0.00"
-          required
-        />
-      </div>
+      <ExpenseAmount
+        amount={amount}
+        onAmountChange={handleAmountChange}
+      />
       
       <SelectPaidBy 
         friends={friends} 
