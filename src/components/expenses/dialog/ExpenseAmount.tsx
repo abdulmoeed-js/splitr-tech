@@ -8,6 +8,14 @@ interface ExpenseAmountProps {
 }
 
 export function ExpenseAmount({ amount, onAmountChange }: ExpenseAmountProps) {
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow positive numbers
+    if (value === '' || (Number(value) >= 0)) {
+      onAmountChange(value);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <Label htmlFor="amount">Amount</Label>
@@ -15,8 +23,10 @@ export function ExpenseAmount({ amount, onAmountChange }: ExpenseAmountProps) {
         id="amount"
         type="number"
         value={amount}
-        onChange={(e) => onAmountChange(e.target.value)}
+        onChange={handleAmountChange}
         placeholder="0.00"
+        min="0"
+        step="0.01"
         required
       />
     </div>

@@ -29,12 +29,48 @@ export function useExpenseFormSubmit() {
     const amountValue = parseFloat(amount);
     console.log("Submit expense called with:", { description, amount, paidBy, selectedFriends, splits, splitMethod });
     
+    if (isNaN(amountValue) || amountValue <= 0) {
+      showToast({
+        title: "Invalid Amount",
+        description: "Please enter a valid amount greater than zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!paidBy) {
+      showToast({
+        title: "Missing Information",
+        description: "Please select who paid for the expense.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedFriends.length === 0) {
+      showToast({
+        title: "Missing Information",
+        description: "Please select at least one friend to split with.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Filter splits to only include selected friends
     const finalSplits = splits.filter(split => 
       selectedFriends.includes(split.friendId)
     );
 
     console.log("Final splits:", finalSplits);
+
+    if (finalSplits.length === 0) {
+      showToast({
+        title: "Missing Information",
+        description: "Please specify how to split the expense.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // If using percentage splits, convert to actual amounts
     if (splitMethod === "percentage") {

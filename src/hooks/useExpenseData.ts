@@ -120,19 +120,19 @@ export const useExpenseData = (session: Session | null) => {
           throw expenseError;
         }
         
-        // Process all splits
-        const splits = newExpense.splits.map(split => ({
+        // Make sure all friendIds are strings
+        const processedSplits = newExpense.splits.map(split => ({
           expense_id: expenseData.id,
-          friend_id: split.friendId,
+          friend_id: String(split.friendId),
           amount: split.amount,
           percentage: split.percentage || (split.amount / newExpense.amount) * 100
         }));
         
-        console.log("Creating splits:", splits);
+        console.log("Creating splits:", processedSplits);
         
         const { error: splitsError } = await supabase
           .from('expense_splits')
-          .insert(splits);
+          .insert(processedSplits);
         
         if (splitsError) {
           console.error("Error creating splits:", splitsError);
@@ -165,6 +165,7 @@ export const useExpenseData = (session: Session | null) => {
       });
     },
     onError: (error: any) => {
+      console.error("Error in mutation:", error);
       toast({
         title: "Failed to Add Expense",
         description: error.message || "An error occurred while adding expense",
@@ -179,7 +180,23 @@ export const useExpenseData = (session: Session | null) => {
     isLoading,
     handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => {
       console.log("handleAddExpense called with:", { description, amount, paidBy, splits, groupId });
-      addExpenseMutation.mutate({ description, amount, paidBy, splits, groupId });
+      
+      // Make sure paidBy is a string
+      const processedPaidBy = String(paidBy);
+      
+      // Make sure splits have friendId as strings
+      const processedSplits = splits.map(split => ({
+        ...split,
+        friendId: String(split.friendId)
+      }));
+      
+      addExpenseMutation.mutate({ 
+        description, 
+        amount, 
+        paidBy: processedPaidBy, 
+        splits: processedSplits, 
+        groupId 
+      });
     },
     // For backward compatibility
     addExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => {

@@ -11,11 +11,14 @@ export function SplitMethodSelector({
   value,
   onChange 
 }: SplitMethodSelectorProps) {
+  // Make sure the value is one of the allowed values
+  const validValue = ["equal", "custom", "percentage"].includes(value) ? value : "equal";
+
   return (
     <div className="space-y-2">
       <Label>Split Method</Label>
       <RadioGroup 
-        value={value} 
+        value={validValue} 
         onValueChange={(value) => onChange(value as "equal" | "custom" | "percentage")}
         className="flex flex-col space-y-1"
       >
