@@ -23,27 +23,32 @@ export const addFriend = async (
   const isComplete = !!name;
   const isInvited = false;
 
-  const { data, error } = await supabase
-    .from('friends')
-    .insert({
-      user_id: session.user.id,
-      name: name || "",
-      email,
-      phone,
-      is_invited: isInvited,
-      is_complete: isComplete
-    })
-    .select()
-    .single();
-  
-  if (error) throw error;
-  
-  return { 
-    id: data.id, 
-    name: data.name,
-    email: data.email || undefined,
-    phone: data.phone || undefined,
-    isInvited: data.is_invited || false,
-    isComplete: data.is_complete || false
-  };
+  try {
+    const { data, error } = await supabase
+      .from('friends')
+      .insert({
+        user_id: session.user.id,
+        name: name || "",
+        email,
+        phone,
+        is_invited: isInvited,
+        is_complete: isComplete
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return { 
+      id: data.id, 
+      name: data.name,
+      email: data.email || undefined,
+      phone: data.phone || undefined,
+      isInvited: data.is_invited || false,
+      isComplete: data.is_complete || false
+    };
+  } catch (error) {
+    console.error("Error adding friend:", error);
+    throw error;
+  }
 };

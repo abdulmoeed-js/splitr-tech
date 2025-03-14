@@ -43,32 +43,37 @@ export const useExpenseData = (session: Session | null) => {
         ] as Expense[];
       }
 
-      const { data, error } = await supabase
-        .from('expenses')
-        .select(`
-          *,
-          expense_splits:expense_splits(*)
-        `)
-        .eq('user_id', session.user.id)
-        .order('date', { ascending: false });
-      
-      if (error) throw error;
-      
-      return data.map(exp => ({
-        id: exp.id,
-        description: exp.description,
-        amount: Number(exp.amount),
-        paidBy: exp.paid_by,
-        date: new Date(exp.date),
-        groupId: exp.group_id || undefined,
-        splits: exp.expense_splits.map((split: any) => ({
-          friendId: split.friend_id,
-          amount: Number(split.amount),
-          percentage: split.percentage ? Number(split.percentage) : undefined
-        }))
-      }));
+      try {
+        const { data, error } = await supabase
+          .from('expenses')
+          .select(`
+            *,
+            expense_splits:expense_splits(*)
+          `)
+          .eq('user_id', session.user.id)
+          .order('date', { ascending: false });
+        
+        if (error) throw error;
+        
+        return data.map(exp => ({
+          id: exp.id,
+          description: exp.description,
+          amount: Number(exp.amount),
+          paidBy: exp.paid_by,
+          date: new Date(exp.date),
+          groupId: exp.group_id || undefined,
+          splits: exp.expense_splits.map((split: any) => ({
+            friendId: split.friend_id,
+            amount: Number(split.amount),
+            percentage: split.percentage ? Number(split.percentage) : undefined
+          }))
+        }));
+      } catch (error) {
+        console.error("Error fetching expenses:", error);
+        return [];
+      }
     },
-    enabled: !!session
+    enabled: true // Always enabled, returns mock data when not authenticated
   });
 
   // Add expense mutation
@@ -109,7 +114,7 @@ export const useExpenseData = (session: Session | null) => {
         
         if (expenseError) throw expenseError;
         
-        // Process all splits without UUID validation
+        // Process all splits
         const splits = newExpense.splits.map(split => ({
           expense_id: expenseData.id,
           friend_id: split.friendId,
