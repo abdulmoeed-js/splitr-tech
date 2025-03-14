@@ -8,32 +8,21 @@ export const removeFriend = async (
   friendId: string
 ) => {
   if (session?.user) {
-    // For authenticated users with UUID format IDs in the database
+    // For authenticated users
     try {
-      // Only attempt to delete if it looks like a UUID
-      if (isValidUUID(friendId)) {
-        const { error } = await supabase
-          .from('friends')
-          .delete()
-          .eq('id', friendId)
-          .eq('user_id', session.user.id);
-        
-        if (error) throw error;
-      } else {
-        console.error("Invalid UUID format for friendId:", friendId);
-        // For development mode, just return the ID without database operations
-      }
+      const { error } = await supabase
+        .from('friends')
+        .delete()
+        .eq('id', friendId)
+        .eq('user_id', session.user.id);
+      
+      if (error) throw error;
     } catch (error) {
       console.error("Error removing friend:", error);
+      throw error;
     }
   }
 
   // For non-authenticated users, just return the ID to update client-side state
   return friendId;
 };
-
-// Helper function to validate UUID format
-function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-}

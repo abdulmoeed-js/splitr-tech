@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,6 +192,9 @@ export function AddExpenseDialog({
       <DialogContent className="glass-panel">
         <DialogHeader>
           <DialogTitle>Add New Expense</DialogTitle>
+          <DialogDescription>
+            Enter expense details to split among friends.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

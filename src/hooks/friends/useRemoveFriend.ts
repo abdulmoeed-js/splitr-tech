@@ -20,14 +20,6 @@ export const useRemoveFriend = (session: Session | null, friends: Friend[]) => {
         return friendId;
       }
       
-      // Only validate UUID format if we're working with a logged in user
-      if (!isValidUUID(friendId)) {
-        console.warn("Non-UUID format detected for friendId:", friendId);
-        // For numeric IDs in development mode, we can't perform the database operations
-        // Just return the ID to update the client-side state
-        return friendId;
-      }
-      
       try {
         // Check if friend has any expenses
         const hasExpenses = await checkFriendHasExpenses(session, friendId);
@@ -70,9 +62,3 @@ export const useRemoveFriend = (session: Session | null, friends: Friend[]) => {
     }
   });
 };
-
-// Helper function to validate UUID format
-function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-}

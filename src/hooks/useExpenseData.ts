@@ -94,23 +94,15 @@ export const useExpenseData = (session: Session | null) => {
       }
 
       try {
-        // For authenticated users with UUID format in the database
-        // Check if paidBy is a valid UUID (for authenticated mode)
-        const paidBy = isValidUUID(newExpense.paidBy) ? newExpense.paidBy : null;
-        
-        if (!paidBy) {
-          console.warn("Invalid UUID format for paidBy:", newExpense.paidBy);
-          throw new Error("Invalid friend ID format.");
-        }
-
-        // Insert the expense
+        // For authenticated users
+        // No need to validate UUID format for paidBy, the API will handle this
         const { data: expenseData, error: expenseError } = await supabase
           .from('expenses')
           .insert({
             user_id: session.user.id,
             description: newExpense.description,
             amount: newExpense.amount,
-            paid_by: paidBy,
+            paid_by: newExpense.paidBy,
             group_id: newExpense.groupId || null
           })
           .select()
@@ -118,17 +110,8 @@ export const useExpenseData = (session: Session | null) => {
         
         if (expenseError) throw expenseError;
         
-        // Validate split friend IDs before inserting
-        const validSplits = newExpense.splits.filter(split => 
-          isValidUUID(split.friendId)
-        );
-        
-        if (validSplits.length === 0) {
-          throw new Error("No valid friend IDs for expense splits.");
-        }
-        
-        // Insert the splits
-        const splits = validSplits.map(split => ({
+        // Process all splits without checking UUID format
+        const splits = newExpense.splits.map(split => ({
           expense_id: expenseData.id,
           friend_id: split.friendId,
           amount: split.amount,
@@ -189,7 +172,7 @@ export const useExpenseData = (session: Session | null) => {
   };
 };
 
-// Helper function to validate UUID format
+// Helper function to validate UUID format (kept for reference, but not used in validation now)
 function isValidUUID(uuid: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
