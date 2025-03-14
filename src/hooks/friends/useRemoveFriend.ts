@@ -15,18 +15,31 @@ export const useRemoveFriend = (session: Session | null, friends: Friend[]) => {
         throw new Error("Cannot remove yourself from friends list.");
       }
       
-      // Only validate UUID format if we're working with a logged in user and the ID isn't a simple numeric ID
-      if (session?.user && !isNumericId(friendId) && !isValidUUID(friendId)) {
-        throw new Error("Invalid friend ID format.");
+      // In development/non-authenticated mode, skip validation and database checks
+      if (!session?.user) {
+        return friendId;
       }
       
-      // Check if friend has any expenses
-      const hasExpenses = await checkFriendHasExpenses(session, friendId);
-      if (hasExpenses) {
-        throw new Error("This friend has associated expenses. Settle all expenses before removing.");
+      // Only validate UUID format if we're working with a logged in user
+      if (!isValidUUID(friendId)) {
+        console.warn("Non-UUID format detected for friendId:", friendId);
+        // For numeric IDs in development mode, we can't perform the database operations
+        // Just return the ID to update the client-side state
+        return friendId;
       }
       
-      return removeFriend(session, friendId);
+      try {
+        // Check if friend has any expenses
+        const hasExpenses = await checkFriendHasExpenses(session, friendId);
+        if (hasExpenses) {
+          throw new Error("This friend has associated expenses. Settle all expenses before removing.");
+        }
+        
+        return removeFriend(session, friendId);
+      } catch (error) {
+        console.error("Error in remove friend mutation:", error);
+        throw error;
+      }
     },
     onSuccess: (removedFriendId) => {
       // Update friends list
@@ -62,9 +75,4 @@ export const useRemoveFriend = (session: Session | null, friends: Friend[]) => {
 function isValidUUID(uuid: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
-}
-
-// Helper function to check if ID is a simple numeric ID (for non-authenticated mode)
-function isNumericId(id: string): boolean {
-  return /^\d+$/.test(id);
 }

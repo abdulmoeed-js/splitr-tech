@@ -93,45 +93,68 @@ export const useExpenseData = (session: Session | null) => {
         };
       }
 
-      // Insert the expense
-      const { data: expenseData, error: expenseError } = await supabase
-        .from('expenses')
-        .insert({
-          user_id: session.user.id,
-          description: newExpense.description,
-          amount: newExpense.amount,
-          paid_by: newExpense.paidBy,
-          group_id: newExpense.groupId || null
-        })
-        .select()
-        .single();
-      
-      if (expenseError) throw expenseError;
-      
-      // Insert the splits
-      const splits = newExpense.splits.map(split => ({
-        expense_id: expenseData.id,
-        friend_id: split.friendId,
-        amount: split.amount,
-        percentage: split.percentage || (split.amount / newExpense.amount) * 100
-      }));
-      
-      const { error: splitsError } = await supabase
-        .from('expense_splits')
-        .insert(splits);
-      
-      if (splitsError) throw splitsError;
-      
-      // Return the complete expense with splits
-      return {
-        id: expenseData.id,
-        description: expenseData.description,
-        amount: Number(expenseData.amount),
-        paidBy: expenseData.paid_by,
-        date: new Date(expenseData.date),
-        groupId: expenseData.group_id || undefined,
-        splits: newExpense.splits
-      };
+      try {
+        // For authenticated users with UUID format in the database
+        // Check if paidBy is a valid UUID (for authenticated mode)
+        const paidBy = isValidUUID(newExpense.paidBy) ? newExpense.paidBy : null;
+        
+        if (!paidBy) {
+          console.warn("Invalid UUID format for paidBy:", newExpense.paidBy);
+          throw new Error("Invalid friend ID format.");
+        }
+
+        // Insert the expense
+        const { data: expenseData, error: expenseError } = await supabase
+          .from('expenses')
+          .insert({
+            user_id: session.user.id,
+            description: newExpense.description,
+            amount: newExpense.amount,
+            paid_by: paidBy,
+            group_id: newExpense.groupId || null
+          })
+          .select()
+          .single();
+        
+        if (expenseError) throw expenseError;
+        
+        // Validate split friend IDs before inserting
+        const validSplits = newExpense.splits.filter(split => 
+          isValidUUID(split.friendId)
+        );
+        
+        if (validSplits.length === 0) {
+          throw new Error("No valid friend IDs for expense splits.");
+        }
+        
+        // Insert the splits
+        const splits = validSplits.map(split => ({
+          expense_id: expenseData.id,
+          friend_id: split.friendId,
+          amount: split.amount,
+          percentage: split.percentage || (split.amount / newExpense.amount) * 100
+        }));
+        
+        const { error: splitsError } = await supabase
+          .from('expense_splits')
+          .insert(splits);
+        
+        if (splitsError) throw splitsError;
+        
+        // Return the complete expense with splits
+        return {
+          id: expenseData.id,
+          description: expenseData.description,
+          amount: Number(expenseData.amount),
+          paidBy: expenseData.paid_by,
+          date: new Date(expenseData.date),
+          groupId: expenseData.group_id || undefined,
+          splits: newExpense.splits
+        };
+      } catch (error) {
+        console.error("Error adding expense:", error);
+        throw error;
+      }
     },
     onSuccess: (newExpense) => {
       queryClient.setQueryData(['expenses'], (oldExpenses: Expense[] = []) => 
@@ -143,7 +166,7 @@ export const useExpenseData = (session: Session | null) => {
         description: `$${newExpense.amount.toFixed(2)} for ${newExpense.description}`
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to Add Expense",
         description: error.message || "An error occurred while adding expense",
@@ -165,3 +188,9 @@ export const useExpenseData = (session: Session | null) => {
     }
   };
 };
+
+// Helper function to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
