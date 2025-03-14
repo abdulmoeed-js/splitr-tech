@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Dialog,
@@ -9,33 +10,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, UserPlus, Mail, Phone } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { Friend, Split } from "@/types/expense";
 import { useToast } from "@/components/ui/use-toast";
 
 interface AddExpenseDialogProps {
   friends: Friend[];
   onAddExpense: (description: string, amount: number, paidBy: string, splits: Split[]) => void;
-  onAddFriend: (name: string, email?: string, phone?: string) => void;
-  onInviteFriend: (email?: string, phone?: string) => void;
 }
 
 export function AddExpenseDialog({ 
   friends, 
-  onAddExpense, 
-  onAddFriend,
-  onInviteFriend
+  onAddExpense
 }: AddExpenseDialogProps) {
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState(friends[0]?.id || "");
   const [splits, setSplits] = useState<Split[]>([]);
-  const [newFriendName, setNewFriendName] = useState("");
-  const [newFriendEmail, setNewFriendEmail] = useState("");
-  const [newFriendPhone, setNewFriendPhone] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [invitePhone, setInvitePhone] = useState("");
   const { toast } = useToast();
 
   const resetForm = () => {
@@ -43,11 +35,6 @@ export function AddExpenseDialog({
     setAmount("");
     setPaidBy(friends[0]?.id || "");
     setSplits([]);
-    setNewFriendName("");
-    setNewFriendEmail("");
-    setNewFriendPhone("");
-    setInviteEmail("");
-    setInvitePhone("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -94,25 +81,6 @@ export function AddExpenseDialog({
       title: "Expense Added",
       description: "Your expense has been successfully added.",
     });
-  };
-
-  const handleAddFriend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newFriendName.trim()) {
-      onAddFriend(newFriendName, newFriendEmail, newFriendPhone);
-      setNewFriendName("");
-      setNewFriendEmail("");
-      setNewFriendPhone("");
-    }
-  };
-
-  const handleInviteFriend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inviteEmail || invitePhone) {
-      onInviteFriend(inviteEmail, invitePhone);
-      setInviteEmail("");
-      setInvitePhone("");
-    }
   };
 
   return (
@@ -208,80 +176,6 @@ export function AddExpenseDialog({
             Add Expense
           </Button>
         </form>
-        
-        <div className="mt-4 py-2 border-t">
-          <h3 className="text-lg font-semibold">Add New Friend</h3>
-          
-          <form onSubmit={handleAddFriend} className="space-y-2">
-            <div className="space-y-1">
-              <Label htmlFor="newFriendName">Name</Label>
-              <Input
-                id="newFriendName"
-                value={newFriendName}
-                onChange={(e) => setNewFriendName(e.target.value)}
-                placeholder="Friend's name"
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <Label htmlFor="newFriendEmail">Email (Optional)</Label>
-              <Input
-                type="email"
-                id="newFriendEmail"
-                value={newFriendEmail}
-                onChange={(e) => setNewFriendEmail(e.target.value)}
-                placeholder="friend@example.com"
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <Label htmlFor="newFriendPhone">Phone (Optional)</Label>
-              <Input
-                type="tel"
-                id="newFriendPhone"
-                value={newFriendPhone}
-                onChange={(e) => setNewFriendPhone(e.target.value)}
-                placeholder="+1234567890"
-              />
-            </div>
-            
-            <Button type="submit" variant="secondary">
-              <UserPlus className="mr-2 h-4 w-4" /> Add Friend
-            </Button>
-          </form>
-          
-          <div className="mt-4 py-2 border-t">
-            <h3 className="text-lg font-semibold">Invite Friend</h3>
-            
-            <form onSubmit={handleInviteFriend} className="space-y-2">
-              <div className="space-y-1">
-                <Label htmlFor="inviteEmail">Email</Label>
-                <Input
-                  type="email"
-                  id="inviteEmail"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="friend@example.com"
-                />
-              </div>
-              
-              <div className="space-y-1">
-                <Label htmlFor="invitePhone">Phone</Label>
-                <Input
-                  type="tel"
-                  id="invitePhone"
-                  value={invitePhone}
-                  onChange={(e) => setInvitePhone(e.target.value)}
-                  placeholder="+1234567890"
-                />
-              </div>
-              
-              <Button type="submit" variant="secondary">
-                <Mail className="mr-2 h-4 w-4" /> Invite Friend
-              </Button>
-            </form>
-          </div>
-        </div>
       </DialogContent>
     </Dialog>
   );

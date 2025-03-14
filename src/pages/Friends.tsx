@@ -1,21 +1,26 @@
 
-import { useExpenses } from "@/hooks/useExpenses";
+import { useSession } from "@/hooks/useSession";
+import { useFriends } from "@/hooks/useFriends";
 import { FriendsManagement } from "@/components/friends/FriendsManagement";
 
 const FriendsPage = () => {
+  const { session, userName } = useSession();
   const { 
-    isLoaded, 
     friends, 
+    isFriendsLoading,
     handleAddFriend, 
     handleUpdateFriend, 
     handleInviteFriend, 
     handleRemoveFriend 
-  } = useExpenses();
+  } = useFriends(session, userName);
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Friends Management</h1>
-      {isLoaded ? (
+      {isFriendsLoading ? (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : (
         <FriendsManagement
           friends={friends}
           onAddFriend={handleAddFriend}
@@ -23,10 +28,6 @@ const FriendsPage = () => {
           onInviteFriend={handleInviteFriend}
           onRemoveFriend={handleRemoveFriend}
         />
-      ) : (
-        <div className="flex items-center justify-center min-h-[200px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
       )}
     </div>
   );

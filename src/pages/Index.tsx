@@ -142,8 +142,6 @@ export default function Home() {
           <AddExpenseDialog
             onAddExpense={handleAddNewExpense}
             friends={filteredFriends}
-            onAddFriend={handleAddFriend}
-            onInviteFriend={handleInviteFriend}
           />
           
           <SettlementDialog
