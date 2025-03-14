@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BalanceSummary } from "@/components/BalanceSummary";
 import { ExpenseDashboard } from "@/components/expenses/ExpenseDashboard";
 import { ExpenseTabContent } from "@/components/expenses/ExpenseTabContent";
-import { AddExpenseDialog } from "@/components/AddExpenseDialog";
+import { AddExpenseDialog } from "@/components/expenses/dialog/AddExpenseDialog";
 import { SettlementDialog } from "@/components/settlements/SettlementDialog";
 
 export default function Home() {
