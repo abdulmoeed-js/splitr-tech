@@ -226,7 +226,8 @@ export function AddExpenseForm({
           selectedFriends={selectedFriends}
           splits={splits}
           splitMethod={splitMethod}
-          onSplitChange={setSplits}
+          amount={parseFloat(amount) || 0}
+          onSplitsChange={setSplits}
         />
       )}
 
