@@ -13,7 +13,9 @@ export const useFriends = (session: Session | null, userName: string) => {
   const { data: friends = [], isLoading: isFriendsLoading } = useQuery({
     queryKey: ['friends'],
     queryFn: () => fetchFriends(session, userName),
-    enabled: !!session || true,
+    enabled: true, // Always fetch friends whether logged in or not
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    cacheTime: 60 * 60 * 1000, // Keep data in cache for 1 hour
   });
 
   // Use the mutation hooks

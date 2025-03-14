@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
@@ -20,17 +21,20 @@ export const useSession = () => {
         setUser(currentSession?.user || null);
         
         if (currentSession?.user && event === 'SIGNED_IN') {
-          // Force a refetch of data when user signs in
-          // We don't want to invalidate friends on sign-in because we want to keep
-          // the user's friends between sessions
+          // Force a refetch of data when user signs in, except for friends
           queryClient.invalidateQueries({ queryKey: ['expenses'] });
           queryClient.invalidateQueries({ queryKey: ['groups'] });
           queryClient.invalidateQueries({ queryKey: ['payments'] });
           queryClient.invalidateQueries({ queryKey: ['reminders'] });
           
-          // For friends, only invalidate if we don't have any friends data already
+          // For friends, we want to merge data with local data, not invalidate it
+          // We'll update friends in the background if needed
           const friends = queryClient.getQueryData(['friends']);
-          if (!friends) {
+          if (friends) {
+            // If we have friends data already, don't invalidate it
+            // The fetchFriends function will handle merging data
+          } else {
+            // Only invalidate if we don't have any friends data
             queryClient.invalidateQueries({ queryKey: ['friends'] });
           }
         }
