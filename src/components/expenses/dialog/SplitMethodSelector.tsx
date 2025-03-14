@@ -14,12 +14,18 @@ export function SplitMethodSelector({
   // Make sure the value is one of the allowed values
   const validValue = ["equal", "custom", "percentage"].includes(value) ? value : "equal";
 
+  const handleValueChange = (newValue: string) => {
+    if (["equal", "custom", "percentage"].includes(newValue)) {
+      onChange(newValue as "equal" | "custom" | "percentage");
+    }
+  };
+
   return (
     <div className="space-y-2">
       <Label>Split Method</Label>
       <RadioGroup 
         value={validValue} 
-        onValueChange={(value) => onChange(value as "equal" | "custom" | "percentage")}
+        onValueChange={handleValueChange}
         className="flex flex-col space-y-1"
       >
         <div className="flex items-center space-x-2">

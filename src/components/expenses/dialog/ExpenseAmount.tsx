@@ -11,7 +11,7 @@ export function ExpenseAmount({ amount, onAmountChange }: ExpenseAmountProps) {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Only allow positive numbers
-    if (value === '' || (Number(value) >= 0)) {
+    if (value === '' || (/^\d*\.?\d*$/.test(value) && Number(value) >= 0)) {
       onAmountChange(value);
     }
   };
@@ -21,7 +21,8 @@ export function ExpenseAmount({ amount, onAmountChange }: ExpenseAmountProps) {
       <Label htmlFor="amount">Amount</Label>
       <Input
         id="amount"
-        type="number"
+        type="text"
+        inputMode="decimal"
         value={amount}
         onChange={handleAmountChange}
         placeholder="0.00"

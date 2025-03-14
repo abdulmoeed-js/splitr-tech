@@ -10,6 +10,15 @@ export const useExpenseData = (session: Session | null) => {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Helper to generate a UUID v4 for mock data
+  const generateUUID = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
   // Fetch expenses from Supabase
   const { data: expenses = [], isLoading: isExpensesLoading } = useQuery({
     queryKey: ['expenses'],
@@ -89,7 +98,7 @@ export const useExpenseData = (session: Session | null) => {
         // Create a local expense for non-authenticated users
         console.log("Creating local expense with:", newExpense);
         return {
-          id: Date.now().toString(),
+          id: generateUUID(),
           description: newExpense.description,
           amount: newExpense.amount,
           paidBy: newExpense.paidBy,
@@ -102,6 +111,19 @@ export const useExpenseData = (session: Session | null) => {
       try {
         console.log("Creating database expense with:", newExpense);
         
+        // Convert numeric friend IDs to UUIDs for authenticated users
+        // This is just a temporary solution - in a real app, you'd need proper ID mapping
+        const friendIdToUuid = (id: string) => {
+          // Check if already a UUID
+          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+            return id;
+          }
+          
+          // For simple numeric IDs in development/testing:
+          // Generate a deterministic UUID based on the ID
+          return `00000000-0000-0000-0000-${id.padStart(12, '0')}`;
+        };
+
         // For authenticated users
         const { data: expenseData, error: expenseError } = await supabase
           .from('expenses')
@@ -109,7 +131,7 @@ export const useExpenseData = (session: Session | null) => {
             user_id: session.user.id,
             description: newExpense.description,
             amount: newExpense.amount,
-            paid_by: newExpense.paidBy,
+            paid_by: friendIdToUuid(newExpense.paidBy),
             group_id: newExpense.groupId || null
           })
           .select()
@@ -120,10 +142,10 @@ export const useExpenseData = (session: Session | null) => {
           throw expenseError;
         }
         
-        // Make sure all friendIds are strings
+        // Process splits for database
         const processedSplits = newExpense.splits.map(split => ({
           expense_id: expenseData.id,
-          friend_id: String(split.friendId),
+          friend_id: friendIdToUuid(split.friendId),
           amount: split.amount,
           percentage: split.percentage || (split.amount / newExpense.amount) * 100
         }));

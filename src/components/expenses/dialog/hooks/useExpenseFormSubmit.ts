@@ -80,8 +80,14 @@ export function useExpenseFormSubmit() {
     }
 
     try {
-      console.log("Calling onAddExpense with:", description, amountValue, paidBy, finalSplits);
-      onAddExpense(description, amountValue, paidBy, finalSplits);
+      // Make sure all friendIds are strings
+      const processedSplits = finalSplits.map(split => ({
+        ...split,
+        friendId: String(split.friendId)
+      }));
+
+      console.log("Calling onAddExpense with:", description, amountValue, paidBy, processedSplits);
+      onAddExpense(description, amountValue, paidBy, processedSplits);
       resetForm();
       onSuccess();
       
