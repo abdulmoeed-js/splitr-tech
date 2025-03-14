@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Expense } from "@/types/expense";
 import { Session } from "@supabase/supabase-js";
-import { generateUUID } from "./uuidUtils";
+import { generateUUID, uuidToFriendId } from "./uuidUtils";
 
 /**
  * Fetches expenses from the database or returns mock data if not authenticated
@@ -49,15 +49,17 @@ export const fetchExpenses = async (session: Session | null): Promise<Expense[]>
     
     if (error) throw error;
     
+    console.log("Fetched expenses data:", data);
+    
     return data.map(exp => ({
       id: exp.id,
       description: exp.description,
       amount: Number(exp.amount),
-      paidBy: exp.paid_by,
+      paidBy: uuidToFriendId(exp.paid_by), // Convert UUID back to simple ID for client
       date: new Date(exp.date),
       groupId: exp.group_id || undefined,
       splits: exp.expense_splits.map((split: any) => ({
-        friendId: split.friend_id,
+        friendId: uuidToFriendId(split.friend_id), // Convert UUID back to simple ID for client
         amount: Number(split.amount),
         percentage: split.percentage ? Number(split.percentage) : undefined
       }))

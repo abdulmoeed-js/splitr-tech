@@ -40,6 +40,8 @@ export const createDatabaseExpense = async (
       throw expenseError;
     }
     
+    console.log("Expense created successfully:", expenseData);
+    
     // Process splits for database
     const processedSplits = splits.map(split => ({
       expense_id: expenseData.id,
@@ -59,15 +61,21 @@ export const createDatabaseExpense = async (
       throw splitsError;
     }
     
-    // Return the complete expense with splits
+    // Return the complete expense with splits for client-side usage
+    const clientSplits = splits.map(split => ({
+      friendId: split.friendId, // Keep original IDs for client-side consistency
+      amount: Number(split.amount),
+      percentage: split.percentage
+    }));
+    
     return {
       id: expenseData.id,
       description: expenseData.description,
       amount: Number(expenseData.amount),
-      paidBy: expenseData.paid_by,
+      paidBy: paidBy, // Keep original ID for client-side consistency
       date: new Date(expenseData.date),
       groupId: expenseData.group_id || undefined,
-      splits: splits
+      splits: clientSplits
     };
   } catch (error) {
     console.error("Error adding expense:", error);

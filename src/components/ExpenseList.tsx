@@ -12,6 +12,18 @@ interface ExpenseListProps {
 }
 
 export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps) => {
+  if (!Array.isArray(expenses) || expenses.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground py-6">
+        No expenses found
+      </div>
+    );
+  }
+
+  // Ensure we have a valid friends array
+  const validFriends = Array.isArray(friends) ? friends : [];
+  const validGroups = Array.isArray(groups) ? groups : [];
+
   // Sort expenses by date, most recent first
   const sortedExpenses = [...expenses].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -24,8 +36,12 @@ export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps
   return (
     <div className="space-y-4">
       {sortedExpenses.map((expense) => {
-        const payer = friends.find(f => f.id === expense.paidBy);
-        const group = expense.groupId ? groups.find(g => g.id === expense.groupId) : null;
+        // Find the payer, handle case where payer might not be found
+        const payer = validFriends.find(f => String(f.id) === String(expense.paidBy)) || 
+          { id: expense.paidBy, name: `Friend #${expense.paidBy}` };
+        
+        // Find the group if it exists
+        const group = expense.groupId ? validGroups.find(g => g.id === expense.groupId) : null;
         
         return (
           <Card key={expense.id} className="p-4 hover:shadow-md transition-shadow slide-up glass-panel">
@@ -37,7 +53,7 @@ export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps
                 <div>
                   <h3 className="font-semibold text-lg">{expense.description}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {format(expense.date, "MMM d, yyyy")}
+                    {format(new Date(expense.date), "MMM d, yyyy")}
                   </p>
                   
                   {group && (
@@ -59,7 +75,7 @@ export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  Split among {expense.splits.length} {expense.splits.length === 1 ? 'person' : 'people'}
+                  Split among {expense.splits?.length || 0} {expense.splits?.length === 1 ? 'person' : 'people'}
                 </div>
               </div>
             </div>

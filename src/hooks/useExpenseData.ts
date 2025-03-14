@@ -16,7 +16,19 @@ export const useExpenseData = (session: Session | null) => {
   const { data: expenses = [], isLoading: isExpensesLoading } = useQuery({
     queryKey: ['expenses'],
     queryFn: () => fetchExpenses(session),
-    enabled: true // Always enabled, returns mock data when not authenticated
+    enabled: true, // Always enabled, returns mock data when not authenticated
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    // Add error handling
+    meta: {
+      onError: (error: any) => {
+        console.error("Error fetching expenses:", error);
+        toast({
+          title: "Failed to load expenses",
+          description: error.message || "An error occurred while loading expenses",
+          variant: "destructive"
+        });
+      }
+    }
   });
 
   // Add expense mutation
@@ -28,31 +40,53 @@ export const useExpenseData = (session: Session | null) => {
       splits: Split[];
       groupId?: string;
     }) => {
-      if (!session?.user) {
-        // Create a local expense for non-authenticated users
-        return createLocalExpense(
+      try {
+        // Ensure IDs are strings
+        const processedPaidBy = String(newExpense.paidBy);
+        
+        // Ensure split friendIds are strings
+        const processedSplits = newExpense.splits.map(split => ({
+          ...split,
+          friendId: String(split.friendId)
+        }));
+        
+        // Use correct function based on authentication state
+        if (!session?.user) {
+          // Create a local expense for non-authenticated users
+          return createLocalExpense(
+            newExpense.description,
+            newExpense.amount,
+            processedPaidBy,
+            processedSplits,
+            newExpense.groupId
+          );
+        }
+
+        // For authenticated users
+        return createDatabaseExpense(
+          session,
           newExpense.description,
           newExpense.amount,
-          newExpense.paidBy,
-          newExpense.splits,
+          processedPaidBy,
+          processedSplits,
           newExpense.groupId
         );
+      } catch (error) {
+        console.error("Error in mutation function:", error);
+        throw error;
       }
-
-      // For authenticated users
-      return createDatabaseExpense(
-        session,
-        newExpense.description,
-        newExpense.amount,
-        newExpense.paidBy,
-        newExpense.splits,
-        newExpense.groupId
-      );
     },
     onSuccess: (newExpense) => {
-      queryClient.setQueryData(['expenses'], (oldExpenses: Expense[] = []) => 
-        [newExpense, ...oldExpenses]
-      );
+      console.log("Successfully added expense:", newExpense);
+      
+      // Update local cache
+      queryClient.setQueryData(['expenses'], (oldExpenses: Expense[] = []) => {
+        console.log("Updating expenses cache with new expense");
+        return [newExpense, ...oldExpenses];
+      });
+      
+      // Explicitly invalidate the expenses query to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
       
       toast({
         title: "Expense Added",

@@ -25,7 +25,30 @@ export const friendIdToUuid = (id: string): string => {
     return id;
   }
   
-  // For simple numeric IDs in development/testing:
-  // Generate a deterministic UUID based on the ID
-  return `00000000-0000-0000-0000-${id.padStart(12, '0')}`;
+  try {
+    // Ensure id is a string
+    const idStr = String(id);
+    
+    // For simple numeric IDs in development/testing:
+    // Generate a deterministic UUID based on the ID
+    return `00000000-0000-0000-0000-${idStr.padStart(12, '0')}`;
+  } catch (error) {
+    console.error("Error converting ID to UUID:", error, "ID was:", id);
+    // Default to a safer fallback if conversion fails
+    return `00000000-0000-0000-0000-000000000000`;
+  }
+};
+
+/**
+ * Converts a UUID back to a simple ID format for client-side use
+ */
+export const uuidToFriendId = (uuid: string): string => {
+  // Check for our specific format
+  const match = uuid.match(/^00000000-0000-0000-0000-(\d{12})$/);
+  if (match) {
+    // Return without leading zeros
+    return match[1].replace(/^0+/, '') || '0';
+  }
+  // If not in our specific format, return the full UUID
+  return uuid;
 };
