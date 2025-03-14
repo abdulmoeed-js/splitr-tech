@@ -27,11 +27,14 @@ export function useExpenseFormSubmit() {
     resetForm
   }: SubmitExpenseParams) => {
     const amountValue = parseFloat(amount);
+    console.log("Submit expense called with:", { description, amount, paidBy, selectedFriends, splits, splitMethod });
     
     // Filter splits to only include selected friends
     const finalSplits = splits.filter(split => 
       selectedFriends.includes(split.friendId)
     );
+
+    console.log("Final splits:", finalSplits);
 
     // If using percentage splits, convert to actual amounts
     if (splitMethod === "percentage") {
@@ -41,6 +44,7 @@ export function useExpenseFormSubmit() {
     }
 
     try {
+      console.log("Calling onAddExpense with:", description, amountValue, paidBy, finalSplits);
       onAddExpense(description, amountValue, paidBy, finalSplits);
       resetForm();
       onSuccess();

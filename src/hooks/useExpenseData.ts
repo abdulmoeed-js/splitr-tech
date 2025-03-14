@@ -87,6 +87,7 @@ export const useExpenseData = (session: Session | null) => {
     }) => {
       if (!session?.user) {
         // Create a local expense for non-authenticated users
+        console.log("Creating local expense with:", newExpense);
         return {
           id: Date.now().toString(),
           description: newExpense.description,
@@ -99,6 +100,8 @@ export const useExpenseData = (session: Session | null) => {
       }
 
       try {
+        console.log("Creating database expense with:", newExpense);
+        
         // For authenticated users
         const { data: expenseData, error: expenseError } = await supabase
           .from('expenses')
@@ -112,7 +115,10 @@ export const useExpenseData = (session: Session | null) => {
           .select()
           .single();
         
-        if (expenseError) throw expenseError;
+        if (expenseError) {
+          console.error("Error creating expense:", expenseError);
+          throw expenseError;
+        }
         
         // Process all splits
         const splits = newExpense.splits.map(split => ({
@@ -122,11 +128,16 @@ export const useExpenseData = (session: Session | null) => {
           percentage: split.percentage || (split.amount / newExpense.amount) * 100
         }));
         
+        console.log("Creating splits:", splits);
+        
         const { error: splitsError } = await supabase
           .from('expense_splits')
           .insert(splits);
         
-        if (splitsError) throw splitsError;
+        if (splitsError) {
+          console.error("Error creating splits:", splitsError);
+          throw splitsError;
+        }
         
         // Return the complete expense with splits
         return {
@@ -167,6 +178,7 @@ export const useExpenseData = (session: Session | null) => {
     isExpensesLoading,
     isLoading,
     handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => {
+      console.log("handleAddExpense called with:", { description, amount, paidBy, splits, groupId });
       addExpenseMutation.mutate({ description, amount, paidBy, splits, groupId });
     },
     // For backward compatibility
