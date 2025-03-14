@@ -158,14 +158,23 @@ export function AddExpenseDialog({
       return;
     }
 
-    onAddExpense(description, amountValue, paidBy, finalSplits);
-    setOpen(false);
-    resetForm();
-    
-    toast({
-      title: "Expense Added",
-      description: "Your expense has been successfully added.",
-    });
+    try {
+      onAddExpense(description, amountValue, paidBy, finalSplits);
+      setOpen(false);
+      resetForm();
+      
+      toast({
+        title: "Expense Added",
+        description: "Your expense has been successfully added.",
+      });
+    } catch (error) {
+      console.error("Error adding expense:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An error occurred while adding the expense",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAmountChange = (value: string) => {

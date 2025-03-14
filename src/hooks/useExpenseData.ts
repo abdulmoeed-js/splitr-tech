@@ -95,7 +95,6 @@ export const useExpenseData = (session: Session | null) => {
 
       try {
         // For authenticated users
-        // No need to validate UUID format for paidBy, the API will handle this
         const { data: expenseData, error: expenseError } = await supabase
           .from('expenses')
           .insert({
@@ -110,7 +109,7 @@ export const useExpenseData = (session: Session | null) => {
         
         if (expenseError) throw expenseError;
         
-        // Process all splits without checking UUID format
+        // Process all splits without UUID validation
         const splits = newExpense.splits.map(split => ({
           expense_id: expenseData.id,
           friend_id: split.friendId,
@@ -171,9 +170,3 @@ export const useExpenseData = (session: Session | null) => {
     }
   };
 };
-
-// Helper function to validate UUID format (kept for reference, but not used in validation now)
-function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-}
