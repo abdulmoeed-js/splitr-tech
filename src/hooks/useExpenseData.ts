@@ -1,87 +1,21 @@
 
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Expense, Split } from "@/types/expense";
 import { toast } from "@/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Session } from "@supabase/supabase-js";
+import { fetchExpenses } from "@/utils/expense/expenseQueries";
+import { createLocalExpense } from "@/utils/expense/expenseQueries";
+import { createDatabaseExpense } from "@/utils/expense/expenseMutations";
 
 export const useExpenseData = (session: Session | null) => {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Helper to generate a UUID v4 for mock data
-  const generateUUID = () => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  };
-
   // Fetch expenses from Supabase
   const { data: expenses = [], isLoading: isExpensesLoading } = useQuery({
     queryKey: ['expenses'],
-    queryFn: async () => {
-      if (!session?.user) {
-        // Return mock data for development without auth
-        return [
-          {
-            id: "1",
-            description: "Dinner",
-            amount: 100,
-            paidBy: "1", // You
-            date: new Date(),
-            splits: [
-              { friendId: "1", amount: 50 },
-              { friendId: "2", amount: 50 }
-            ]
-          },
-          {
-            id: "2",
-            description: "Movie tickets",
-            amount: 60,
-            paidBy: "2", // Alice
-            date: new Date(Date.now() - 86400000),
-            splits: [
-              { friendId: "1", amount: 20 },
-              { friendId: "2", amount: 20 },
-              { friendId: "3", amount: 20 }
-            ]
-          }
-        ] as Expense[];
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('expenses')
-          .select(`
-            *,
-            expense_splits:expense_splits(*)
-          `)
-          .eq('user_id', session.user.id)
-          .order('date', { ascending: false });
-        
-        if (error) throw error;
-        
-        return data.map(exp => ({
-          id: exp.id,
-          description: exp.description,
-          amount: Number(exp.amount),
-          paidBy: exp.paid_by,
-          date: new Date(exp.date),
-          groupId: exp.group_id || undefined,
-          splits: exp.expense_splits.map((split: any) => ({
-            friendId: split.friend_id,
-            amount: Number(split.amount),
-            percentage: split.percentage ? Number(split.percentage) : undefined
-          }))
-        }));
-      } catch (error) {
-        console.error("Error fetching expenses:", error);
-        return [];
-      }
-    },
+    queryFn: () => fetchExpenses(session),
     enabled: true // Always enabled, returns mock data when not authenticated
   });
 
@@ -96,85 +30,24 @@ export const useExpenseData = (session: Session | null) => {
     }) => {
       if (!session?.user) {
         // Create a local expense for non-authenticated users
-        console.log("Creating local expense with:", newExpense);
-        return {
-          id: generateUUID(),
-          description: newExpense.description,
-          amount: newExpense.amount,
-          paidBy: newExpense.paidBy,
-          date: new Date(),
-          splits: newExpense.splits,
-          groupId: newExpense.groupId
-        };
+        return createLocalExpense(
+          newExpense.description,
+          newExpense.amount,
+          newExpense.paidBy,
+          newExpense.splits,
+          newExpense.groupId
+        );
       }
 
-      try {
-        console.log("Creating database expense with:", newExpense);
-        
-        // Convert numeric friend IDs to UUIDs for authenticated users
-        // This is just a temporary solution - in a real app, you'd need proper ID mapping
-        const friendIdToUuid = (id: string) => {
-          // Check if already a UUID
-          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
-            return id;
-          }
-          
-          // For simple numeric IDs in development/testing:
-          // Generate a deterministic UUID based on the ID
-          return `00000000-0000-0000-0000-${id.padStart(12, '0')}`;
-        };
-
-        // For authenticated users
-        const { data: expenseData, error: expenseError } = await supabase
-          .from('expenses')
-          .insert({
-            user_id: session.user.id,
-            description: newExpense.description,
-            amount: newExpense.amount,
-            paid_by: friendIdToUuid(newExpense.paidBy),
-            group_id: newExpense.groupId || null
-          })
-          .select()
-          .single();
-        
-        if (expenseError) {
-          console.error("Error creating expense:", expenseError);
-          throw expenseError;
-        }
-        
-        // Process splits for database
-        const processedSplits = newExpense.splits.map(split => ({
-          expense_id: expenseData.id,
-          friend_id: friendIdToUuid(split.friendId),
-          amount: split.amount,
-          percentage: split.percentage || (split.amount / newExpense.amount) * 100
-        }));
-        
-        console.log("Creating splits:", processedSplits);
-        
-        const { error: splitsError } = await supabase
-          .from('expense_splits')
-          .insert(processedSplits);
-        
-        if (splitsError) {
-          console.error("Error creating splits:", splitsError);
-          throw splitsError;
-        }
-        
-        // Return the complete expense with splits
-        return {
-          id: expenseData.id,
-          description: expenseData.description,
-          amount: Number(expenseData.amount),
-          paidBy: expenseData.paid_by,
-          date: new Date(expenseData.date),
-          groupId: expenseData.group_id || undefined,
-          splits: newExpense.splits
-        };
-      } catch (error) {
-        console.error("Error adding expense:", error);
-        throw error;
-      }
+      // For authenticated users
+      return createDatabaseExpense(
+        session,
+        newExpense.description,
+        newExpense.amount,
+        newExpense.paidBy,
+        newExpense.splits,
+        newExpense.groupId
+      );
     },
     onSuccess: (newExpense) => {
       queryClient.setQueryData(['expenses'], (oldExpenses: Expense[] = []) => 
