@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useSession } from "@/hooks/useSession";
@@ -12,8 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BalanceSummary } from "@/components/BalanceSummary";
 import { ExpenseDashboard } from "@/components/expenses/ExpenseDashboard";
 import { ExpenseTabContent } from "@/components/expenses/ExpenseTabContent";
-import { FriendGroupList } from "@/components/groups/FriendGroupList";
-import { GroupHeader } from "@/components/groups/GroupHeader";
 import { AddExpenseDialog } from "@/components/AddExpenseDialog";
 import { SettlementDialog } from "@/components/settlements/SettlementDialog";
 
@@ -83,35 +80,24 @@ export default function Home() {
   };
 
   return (
-    <div className="container px-4 py-8 mx-auto max-w-7xl">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-        {/* Left sidebar - Group selection */}
-        <div className="md:col-span-1">
-          <h2 className="mb-4 text-xl font-semibold">Friend Groups</h2>
-          <FriendGroupList
-            groups={groups}
-            onSelectGroup={setSelectedGroupId}
-            selectedGroupId={selectedGroupId}
-          />
-        </div>
-
+    <div className="container px-4 py-8 mx-auto max-w-4xl">
+      <div className="space-y-6">
         {/* Main content area */}
-        <div className="md:col-span-3">
-          {/* Group header with actions */}
-          <GroupHeader
-            selectedGroupId={selectedGroupId}
-            onClearSelection={() => setSelectedGroupId(null)}
-            handleCreateGroup={addGroup}
-            friends={friends}
-            groups={groups}
-          />
-
+        <div className="space-y-6">
           {/* Balance summary without passing balances directly */}
           <BalanceSummary
             expenses={filteredExpenses}
             friends={filteredFriends}
             payments={payments}
           />
+
+          {/* Add Expense Button */}
+          <div className="flex justify-end">
+            <AddExpenseDialog
+              onAddExpense={handleAddNewExpense}
+              friends={filteredFriends}
+            />
+          </div>
 
           {/* Main content tabs */}
           <Tabs defaultValue="dashboard" className="mt-6">
@@ -138,12 +124,7 @@ export default function Home() {
             </TabsContent>
           </Tabs>
           
-          {/* Dialogs */}
-          <AddExpenseDialog
-            onAddExpense={handleAddNewExpense}
-            friends={filteredFriends}
-          />
-          
+          {/* Settlement Dialog */}
           <SettlementDialog
             fromFriend={{id: "1", name: "You"}}
             toFriend={selectedReminder?.toFriendId ? friends.find(f => f.id === selectedReminder.toFriendId) || {id: "unknown", name: "Unknown"} : {id: "unknown", name: "Unknown"}}
