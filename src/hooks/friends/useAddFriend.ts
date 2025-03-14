@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Friend } from "@/types/expense";
 import { toast } from "@/components/ui/use-toast";
-import { addFriend } from "@/utils/friendsApi";
+import { addFriend } from "@/utils/friends";
 import { Session } from "@supabase/supabase-js";
 
 export const useAddFriend = (session: Session | null) => {

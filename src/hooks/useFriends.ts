@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Session } from "@supabase/supabase-js";
 import { Friend } from "@/types/expense";
-import { fetchFriends } from "@/utils/friendsApi";
+import { fetchFriends } from "@/utils/friends";
 import { useAddFriend } from "@/hooks/friends/useAddFriend";
 import { useUpdateFriend } from "@/hooks/friends/useUpdateFriend";
 import { useInviteFriend } from "@/hooks/friends/useInviteFriend";
