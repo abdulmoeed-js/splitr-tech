@@ -1,9 +1,11 @@
 
 import React from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Friend, Split } from "@/types/expense";
+import { EqualSplit } from "./split-details/EqualSplit";
+import { AmountSplit } from "./split-details/AmountSplit";
+import { PercentageSplit } from "./split-details/PercentageSplit";
+import { useSplitCalculation } from "./hooks/useSplitCalculation";
 
 interface SplitDetailsProps {
   selectedFriends: string[];
@@ -22,36 +24,11 @@ export function SplitDetails({
   splits,
   onSplitsChange
 }: SplitDetailsProps) {
+  const { calculateTotalPercentage, handleSplitChange } = useSplitCalculation();
   
-  // Get the total of current splits for percentage validation
-  const calculateTotalPercentage = () => {
-    return splits.reduce((sum, split) => sum + (split.percentage || 0), 0);
-  };
-
   // Handle updating split amounts or percentages
-  const handleSplitChange = (friendId: string, value: string, field: 'amount' | 'percentage') => {
-    const numericValue = parseFloat(value) || 0;
-
-    // Create a new array with updated values
-    const updatedSplits = splits.map(split => {
-      if (split.friendId === friendId) {
-        if (field === 'amount') {
-          return {
-            ...split,
-            amount: numericValue,
-            percentage: amount > 0 ? (numericValue / amount) * 100 : 0
-          };
-        } else {
-          return {
-            ...split,
-            percentage: numericValue,
-            amount: (numericValue / 100) * amount
-          };
-        }
-      }
-      return split;
-    });
-    
+  const onSplitChange = (friendId: string, value: string, field: 'amount' | 'percentage') => {
+    const updatedSplits = handleSplitChange(splits, friendId, value, field, amount);
     onSplitsChange(updatedSplits);
   };
 
@@ -79,21 +56,7 @@ export function SplitDetails({
     return (
       <div className="space-y-4">
         <Label>Equal Split</Label>
-        <div className="grid gap-2">
-          {splits.map((split) => {
-            const friend = friends.find(f => f.id === split.friendId);
-            return (
-              <Card key={split.friendId} className="p-2">
-                <div className="flex justify-between items-center">
-                  <span>{friend?.name}</span>
-                  <span className="font-medium">
-                    Rs. {split.amount.toFixed(2)} ({split.percentage?.toFixed(1)}%)
-                  </span>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+        <EqualSplit splits={splits} friends={friends} />
       </div>
     );
   }
@@ -102,69 +65,28 @@ export function SplitDetails({
     return (
       <div className="space-y-4">
         <Label>Split by Amount</Label>
-        <div className="grid gap-2">
-          {splits.map((split) => {
-            const friend = friends.find(f => f.id === split.friendId);
-            return (
-              <Card key={split.friendId} className="p-2">
-                <div className="flex justify-between items-center">
-                  <span>{friend?.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span>Rs.</span>
-                    <Input
-                      type="number"
-                      value={split.amount || ''}
-                      onChange={(e) => handleSplitChange(split.friendId, e.target.value, 'amount')}
-                      className="w-24"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-        <div className="text-right text-sm font-medium">
-          Total: Rs. {splits.reduce((sum, split) => sum + split.amount, 0).toFixed(2)} / {amount.toFixed(2)}
-        </div>
+        <AmountSplit 
+          splits={splits} 
+          friends={friends} 
+          amount={amount} 
+          onSplitChange={onSplitChange} 
+        />
       </div>
     );
   }
 
   if (splitMethod === 'percentage') {
-    const totalPercentage = calculateTotalPercentage();
+    const totalPercentage = calculateTotalPercentage(splits);
     
     return (
       <div className="space-y-4">
         <Label>Split by Percentage</Label>
-        <div className="grid gap-2">
-          {splits.map((split) => {
-            const friend = friends.find(f => f.id === split.friendId);
-            return (
-              <Card key={split.friendId} className="p-2">
-                <div className="flex justify-between items-center">
-                  <span>{friend?.name}</span>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      value={split.percentage || ''}
-                      onChange={(e) => handleSplitChange(split.friendId, e.target.value, 'percentage')}
-                      className="w-20"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                    />
-                    <span>%</span>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-        <div className={`text-right text-sm font-medium ${totalPercentage !== 100 ? 'text-red-500' : ''}`}>
-          Total: {totalPercentage.toFixed(1)}% {totalPercentage !== 100 ? '(should be 100%)' : ''}
-        </div>
+        <PercentageSplit 
+          splits={splits} 
+          friends={friends} 
+          totalPercentage={totalPercentage} 
+          onSplitChange={onSplitChange}
+        />
       </div>
     );
   }

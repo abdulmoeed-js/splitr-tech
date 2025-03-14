@@ -1,5 +1,5 @@
 
-import { Toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { Split } from "@/types/expense";
 
 interface ValidationParams {
@@ -9,7 +9,7 @@ interface ValidationParams {
   selectedFriends: string[];
   splits: Split[];
   splitMethod: "equal" | "custom" | "percentage";
-  toast: (props: Toast) => void;
+  toast: typeof toast;
 }
 
 export function useExpenseFormValidation() {
