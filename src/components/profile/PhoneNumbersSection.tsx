@@ -18,11 +18,17 @@ export const PhoneNumbersSection = ({ phoneNumbers, setPhoneNumbers }: PhoneNumb
   const { user: authUser } = useAuth();
 
   const handleAddPhoneNumber = async (newPhoneNumber: string) => {
-    if (!newPhoneNumber.trim() || !authUser) return;
+    console.log("Adding phone number:", newPhoneNumber);
+    
+    if (!newPhoneNumber.trim() || !authUser) {
+      console.log("No phone number or no authenticated user");
+      return;
+    }
     
     const updatedPhoneNumbers = [...phoneNumbers, newPhoneNumber.trim()];
     
     try {
+      console.log("Updating phone numbers in database");
       const { error } = await supabase
         .from('user_preferences')
         .upsert({ 
@@ -32,8 +38,12 @@ export const PhoneNumbersSection = ({ phoneNumbers, setPhoneNumbers }: PhoneNumb
           onConflict: 'user_id' 
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error adding phone number:", error);
+        throw error;
+      }
       
+      console.log("Phone number added successfully");
       setPhoneNumbers(updatedPhoneNumbers);
       setIsAddingPhone(false);
       
@@ -42,6 +52,7 @@ export const PhoneNumbersSection = ({ phoneNumbers, setPhoneNumbers }: PhoneNumb
         description: "Your phone number has been added to your profile"
       });
     } catch (error: any) {
+      console.error("Error in handleAddPhoneNumber:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -51,12 +62,18 @@ export const PhoneNumbersSection = ({ phoneNumbers, setPhoneNumbers }: PhoneNumb
   };
 
   const handleRemovePhoneNumber = async (index: number) => {
-    if (!authUser) return;
+    console.log("Removing phone number at index:", index);
+    
+    if (!authUser) {
+      console.log("No authenticated user, cannot remove phone number");
+      return;
+    }
     
     const updatedPhoneNumbers = [...phoneNumbers];
     updatedPhoneNumbers.splice(index, 1);
     
     try {
+      console.log("Updating phone numbers in database");
       const { error } = await supabase
         .from('user_preferences')
         .upsert({ 
@@ -66,8 +83,12 @@ export const PhoneNumbersSection = ({ phoneNumbers, setPhoneNumbers }: PhoneNumb
           onConflict: 'user_id' 
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error removing phone number:", error);
+        throw error;
+      }
       
+      console.log("Phone number removed successfully");
       setPhoneNumbers(updatedPhoneNumbers);
       
       toast({
@@ -75,6 +96,7 @@ export const PhoneNumbersSection = ({ phoneNumbers, setPhoneNumbers }: PhoneNumb
         description: "The phone number has been removed from your profile"
       });
     } catch (error: any) {
+      console.error("Error in handleRemovePhoneNumber:", error);
       toast({
         variant: "destructive",
         title: "Error",

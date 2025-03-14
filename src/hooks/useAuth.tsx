@@ -11,28 +11,41 @@ export const useAuth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("Setting up auth listeners");
+    
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event, "Session exists:", !!session);
         setSession(session);
         setLoading(false);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session fetch complete, user authenticated:", !!session?.user);
       setSession(session);
+      setLoading(false);
+    }).catch(error => {
+      console.error("Error fetching initial session:", error);
       setLoading(false);
     });
 
     return () => {
+      console.log("Cleaning up auth listeners");
       authListener.subscription.unsubscribe();
     };
   }, []);
 
   const handleSignOut = async () => {
+    console.log("Sign out requested");
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error("Error signing out:", error);
+        throw error;
+      }
       
+      console.log("Signed out successfully");
       toast({
         title: "Signed out successfully",
         description: "You have been signed out of your account",
@@ -40,6 +53,7 @@ export const useAuth = () => {
       
       navigate("/login");
     } catch (error: any) {
+      console.error("Error in sign out process:", error);
       toast({
         variant: "destructive",
         title: "Error signing out",
@@ -47,6 +61,12 @@ export const useAuth = () => {
       });
     }
   };
+
+  console.log("useAuth hook returning:", { 
+    isAuthenticated: !!session, 
+    loading, 
+    userId: session?.user?.id 
+  });
 
   return {
     session,

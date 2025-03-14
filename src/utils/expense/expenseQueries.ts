@@ -8,7 +8,10 @@ import { generateUUID, uuidToFriendId } from "./uuidUtils";
  * Fetches expenses from the database or returns mock data if not authenticated
  */
 export const fetchExpenses = async (session: Session | null): Promise<Expense[]> => {
+  console.log("Fetching expenses, authenticated:", !!session?.user);
+  
   if (!session?.user) {
+    console.log("No authenticated user, returning mock expense data");
     // Return mock data for development without auth
     return [
       {
@@ -38,6 +41,8 @@ export const fetchExpenses = async (session: Session | null): Promise<Expense[]>
   }
 
   try {
+    console.log("Fetching expenses from database for user:", session.user.id);
+    
     const { data, error } = await supabase
       .from('expenses')
       .select(`
@@ -47,25 +52,43 @@ export const fetchExpenses = async (session: Session | null): Promise<Expense[]>
       .eq('user_id', session.user.id)
       .order('date', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase error fetching expenses:", error);
+      throw error;
+    }
     
-    console.log("Fetched expenses data:", data);
+    console.log(`Fetched ${data?.length || 0} expenses from database`);
+    console.log("Raw expense data:", data);
     
-    return data.map(exp => ({
-      id: exp.id,
-      description: exp.description,
-      amount: Number(exp.amount),
-      paidBy: uuidToFriendId(exp.paid_by), // Convert UUID back to simple ID for client
-      date: new Date(exp.date),
-      groupId: exp.group_id || undefined,
-      splits: exp.expense_splits.map((split: any) => ({
-        friendId: uuidToFriendId(split.friend_id), // Convert UUID back to simple ID for client
-        amount: Number(split.amount),
-        percentage: split.percentage ? Number(split.percentage) : undefined
-      }))
-    }));
+    const mappedExpenses = data.map(exp => {
+      const paidBy = uuidToFriendId(exp.paid_by);
+      console.log(`Mapping expense ${exp.id}: amount=${exp.amount}, paidBy=${paidBy}`);
+      
+      const mappedSplits = exp.expense_splits.map((split: any) => {
+        const friendId = uuidToFriendId(split.friend_id);
+        console.log(`- Split: friendId=${friendId}, amount=${split.amount}`);
+        return {
+          friendId: friendId,
+          amount: Number(split.amount),
+          percentage: split.percentage ? Number(split.percentage) : undefined
+        };
+      });
+      
+      return {
+        id: exp.id,
+        description: exp.description,
+        amount: Number(exp.amount),
+        paidBy: paidBy,
+        date: new Date(exp.date),
+        groupId: exp.group_id || undefined,
+        splits: mappedSplits
+      };
+    });
+    
+    console.log("Returning mapped expenses:", mappedExpenses);
+    return mappedExpenses;
   } catch (error) {
-    console.error("Error fetching expenses:", error);
+    console.error("Error in fetchExpenses:", error);
     return [];
   }
 };
@@ -80,8 +103,9 @@ export const createLocalExpense = (
   splits: Array<{ friendId: string; amount: number; percentage?: number }>,
   groupId?: string
 ): Expense => {
-  console.log("Creating local expense with:", { description, amount, paidBy, splits, groupId });
-  return {
+  console.log("Creating local expense:", { description, amount, paidBy, splits, groupId });
+  
+  const expense = {
     id: generateUUID(),
     description,
     amount,
@@ -90,4 +114,7 @@ export const createLocalExpense = (
     splits,
     groupId
   };
+  
+  console.log("Created local expense with ID:", expense.id);
+  return expense;
 };

@@ -18,9 +18,15 @@ export const EditNameForm = ({ initialName, onSave, onCancel }: EditNameFormProp
   const { user: authUser } = useAuth();
 
   const handleUpdateName = async () => {
-    if (!authUser) return;
+    console.log("Updating user name:", editableName);
+    
+    if (!authUser) {
+      console.error("No authenticated user, cannot update name");
+      return;
+    }
     
     try {
+      console.log("Updating name in database");
       const { error } = await supabase
         .from('user_preferences')
         .upsert({ 
@@ -30,8 +36,12 @@ export const EditNameForm = ({ initialName, onSave, onCancel }: EditNameFormProp
           onConflict: 'user_id' 
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating name:", error);
+        throw error;
+      }
       
+      console.log("Name updated successfully");
       onSave(editableName);
       
       toast({
@@ -39,6 +49,7 @@ export const EditNameForm = ({ initialName, onSave, onCancel }: EditNameFormProp
         description: "Your profile name has been updated"
       });
     } catch (error: any) {
+      console.error("Error in handleUpdateName:", error);
       toast({
         variant: "destructive",
         title: "Error",

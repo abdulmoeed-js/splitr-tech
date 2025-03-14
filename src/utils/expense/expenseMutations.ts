@@ -15,21 +15,26 @@ export const createDatabaseExpense = async (
   splits: Split[],
   groupId?: string
 ): Promise<Expense> => {
+  console.log("Creating database expense:", { description, amount, paidBy, splits, groupId });
+  
   if (!session?.user) {
+    console.error("No active session, cannot create database expense");
     throw new Error("No active session");
   }
 
   try {
-    console.log("Creating database expense with:", { description, amount, paidBy, splits, groupId });
+    const convertedPaidBy = friendIdToUuid(paidBy);
+    console.log("Converted paidBy to UUID format:", { original: paidBy, converted: convertedPaidBy });
     
     // For authenticated users
+    console.log("Inserting expense into database");
     const { data: expenseData, error: expenseError } = await supabase
       .from('expenses')
       .insert({
         user_id: session.user.id,
         description: description,
         amount: amount,
-        paid_by: friendIdToUuid(paidBy),
+        paid_by: convertedPaidBy,
         group_id: groupId || null
       })
       .select()
@@ -43,14 +48,23 @@ export const createDatabaseExpense = async (
     console.log("Expense created successfully:", expenseData);
     
     // Process splits for database
-    const processedSplits = splits.map(split => ({
-      expense_id: expenseData.id,
-      friend_id: friendIdToUuid(split.friendId),
-      amount: split.amount,
-      percentage: split.percentage || (split.amount / amount) * 100
-    }));
+    const processedSplits = splits.map(split => {
+      const convertedFriendId = friendIdToUuid(split.friendId);
+      console.log("Converting split friendId:", { 
+        original: split.friendId, 
+        converted: convertedFriendId, 
+        amount: split.amount 
+      });
+      
+      return {
+        expense_id: expenseData.id,
+        friend_id: convertedFriendId,
+        amount: split.amount,
+        percentage: split.percentage || (split.amount / amount) * 100
+      };
+    });
     
-    console.log("Creating splits:", processedSplits);
+    console.log("Inserting splits:", processedSplits);
     
     const { error: splitsError } = await supabase
       .from('expense_splits')
@@ -61,14 +75,19 @@ export const createDatabaseExpense = async (
       throw splitsError;
     }
     
-    // Return the complete expense with splits for client-side usage
-    const clientSplits = splits.map(split => ({
-      friendId: split.friendId, // Keep original IDs for client-side consistency
-      amount: Number(split.amount),
-      percentage: split.percentage
-    }));
+    console.log("Splits created successfully");
     
-    return {
+    // Return the complete expense with splits for client-side usage
+    const clientSplits = splits.map(split => {
+      console.log("Mapping split for client:", split);
+      return {
+        friendId: split.friendId, // Keep original IDs for client-side consistency
+        amount: Number(split.amount),
+        percentage: split.percentage
+      };
+    });
+    
+    const finalExpense = {
       id: expenseData.id,
       description: expenseData.description,
       amount: Number(expenseData.amount),
@@ -77,6 +96,9 @@ export const createDatabaseExpense = async (
       groupId: expenseData.group_id || undefined,
       splits: clientSplits
     };
+    
+    console.log("Returning final expense:", finalExpense);
+    return finalExpense;
   } catch (error) {
     console.error("Error adding expense:", error);
     throw error;
