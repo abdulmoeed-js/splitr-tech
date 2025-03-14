@@ -15,8 +15,8 @@ export const useRemoveFriend = (session: Session | null, friends: Friend[]) => {
         throw new Error("Cannot remove yourself from friends list.");
       }
       
-      // Validate UUID format if we're working with a logged in user
-      if (session?.user && !isValidUUID(friendId)) {
+      // Only validate UUID format if we're working with a logged in user and the ID isn't a simple numeric ID
+      if (session?.user && !isNumericId(friendId) && !isValidUUID(friendId)) {
         throw new Error("Invalid friend ID format.");
       }
       
@@ -62,4 +62,9 @@ export const useRemoveFriend = (session: Session | null, friends: Friend[]) => {
 function isValidUUID(uuid: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
+}
+
+// Helper function to check if ID is a simple numeric ID (for non-authenticated mode)
+function isNumericId(id: string): boolean {
+  return /^\d+$/.test(id);
 }

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Expense, Split } from "@/types/expense";
 import { toast } from "@/components/ui/use-toast";
@@ -8,13 +8,39 @@ import { Session } from "@supabase/supabase-js";
 
 export const useExpenseData = (session: Session | null) => {
   const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch expenses from Supabase
   const { data: expenses = [], isLoading: isExpensesLoading } = useQuery({
     queryKey: ['expenses'],
     queryFn: async () => {
       if (!session?.user) {
-        return [] as Expense[]; // Empty expenses for non-authenticated users
+        // Return mock data for development without auth
+        return [
+          {
+            id: "1",
+            description: "Dinner",
+            amount: 100,
+            paidBy: "1", // You
+            date: new Date(),
+            splits: [
+              { friendId: "1", amount: 50 },
+              { friendId: "2", amount: 50 }
+            ]
+          },
+          {
+            id: "2",
+            description: "Movie tickets",
+            amount: 60,
+            paidBy: "2", // Alice
+            date: new Date(Date.now() - 86400000),
+            splits: [
+              { friendId: "1", amount: 20 },
+              { friendId: "2", amount: 20 },
+              { friendId: "3", amount: 20 }
+            ]
+          }
+        ] as Expense[];
       }
 
       const { data, error } = await supabase
@@ -87,7 +113,7 @@ export const useExpenseData = (session: Session | null) => {
         expense_id: expenseData.id,
         friend_id: split.friendId,
         amount: split.amount,
-        percentage: split.percentage || null
+        percentage: split.percentage || (split.amount / newExpense.amount) * 100
       }));
       
       const { error: splitsError } = await supabase
@@ -114,7 +140,7 @@ export const useExpenseData = (session: Session | null) => {
       
       toast({
         title: "Expense Added",
-        description: `$${newExpense.amount.toFixed(2)} for ${newExpense.description}`,
+        description: `$${newExpense.amount.toFixed(2)} for ${newExpense.description}`
       });
     },
     onError: (error) => {
@@ -129,8 +155,13 @@ export const useExpenseData = (session: Session | null) => {
   return {
     expenses,
     isExpensesLoading,
+    isLoading,
     handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => {
       addExpenseMutation.mutate({ description, amount, paidBy, splits, groupId });
+    },
+    // For backward compatibility
+    addExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => {
+      return addExpenseMutation.mutate({ description, amount, paidBy, splits, groupId });
     }
   };
 };
