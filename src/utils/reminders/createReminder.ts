@@ -13,6 +13,8 @@ export const createReminder = async (
   newReminder: NewReminderData,
   session: Session | null
 ) => {
+  const currentDate = new Date();
+  
   if (!session?.user) {
     return {
       id: Date.now().toString(),
@@ -20,6 +22,7 @@ export const createReminder = async (
       toFriendId: newReminder.toFriendId,
       amount: newReminder.amount,
       dueDate: newReminder.dueDate,
+      createdAt: currentDate,
       isRead: false,
       isPaid: false
     };
@@ -33,6 +36,7 @@ export const createReminder = async (
       to_friend_id: newReminder.toFriendId,
       amount: newReminder.amount,
       due_date: newReminder.dueDate.toISOString(),
+      created_at: currentDate.toISOString(),
       is_read: false,
       is_paid: false
     })
@@ -47,7 +51,9 @@ export const createReminder = async (
     toFriendId: data.to_friend_id,
     amount: Number(data.amount),
     dueDate: new Date(data.due_date),
+    createdAt: new Date(data.created_at),
     isRead: data.is_read,
-    isPaid: data.is_paid
+    isPaid: data.is_paid,
+    message: data.message
   };
 };

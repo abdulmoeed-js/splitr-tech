@@ -22,7 +22,9 @@ export const fetchReminders = async (session: Session | null) => {
     toFriendId: reminder.to_friend_id,
     amount: Number(reminder.amount),
     dueDate: new Date(reminder.due_date),
+    createdAt: new Date(reminder.created_at || new Date()), // Add createdAt with fallback
     isRead: reminder.is_read,
-    isPaid: reminder.is_paid
+    isPaid: reminder.is_paid,
+    message: reminder.message
   }));
 };
