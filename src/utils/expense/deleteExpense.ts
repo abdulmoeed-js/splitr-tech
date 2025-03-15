@@ -15,34 +15,39 @@ export const deleteExpense = async (
 
   try {
     // First delete the splits
-    console.log("Deleting expense splits");
-    const { error: splitError } = await supabase
+    console.log("Deleting expense splits for expense ID:", expenseId);
+    const { error: splitError, data: deletedSplits } = await supabase
       .from('expense_splits')
       .delete()
-      .eq('expense_id', expenseId);
+      .eq('expense_id', expenseId)
+      .select();
     
     if (splitError) {
       console.error("Error deleting expense splits:", splitError);
       throw splitError;
     }
     
+    console.log("Successfully deleted splits:", deletedSplits);
+    
     // Then delete the expense
-    console.log("Deleting expense");
-    const { error: expenseError } = await supabase
+    console.log("Deleting expense with ID:", expenseId, "for user:", session.user.id);
+    const { error: expenseError, data: deletedExpense } = await supabase
       .from('expenses')
       .delete()
       .eq('id', expenseId)
-      .eq('user_id', session.user.id);
+      .eq('user_id', session.user.id)
+      .select();
     
     if (expenseError) {
       console.error("Error deleting expense:", expenseError);
       throw expenseError;
     }
     
-    console.log("Expense deleted successfully");
+    console.log("Successfully deleted expense:", deletedExpense);
     return true;
   } catch (error) {
     console.error("Error in deleteExpense:", error);
+    // Return false to indicate failure but don't throw to prevent UI from breaking
     return false;
   }
 };

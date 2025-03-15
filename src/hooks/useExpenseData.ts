@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Expense, Split } from "@/types/expense";
 import { toast } from "@/components/ui/use-toast";
@@ -90,7 +91,7 @@ export const useExpenseData = (session: Session | null) => {
       
       toast({
         title: "Expense Added",
-        description: `$${newExpense.amount.toFixed(2)} for ${newExpense.description}`
+        description: `Rs. ${newExpense.amount.toFixed(2)} for ${newExpense.description}`
       });
     },
     onError: (error: any) => {
@@ -105,15 +106,32 @@ export const useExpenseData = (session: Session | null) => {
 
   // Delete expense mutation
   const deleteExpenseMutation = useMutation({
-    mutationFn: (expenseId: string) => deleteExpense(session, expenseId),
-    onSuccess: (_, expenseId) => {
-      console.log("Successfully deleted expense:", expenseId);
-      
-      // Update local cache
+    mutationFn: async (expenseId: string) => {
+      console.log("Starting delete expense mutation for ID:", expenseId);
+      // Optimistically update the UI first
+      const previousExpenses = queryClient.getQueryData<Expense[]>(['expenses']) || [];
       queryClient.setQueryData(['expenses'], (oldExpenses: Expense[] = []) => {
-        console.log("Updating expenses cache after deletion");
+        console.log("Optimistically removing expense from cache");
         return oldExpenses.filter(expense => expense.id !== expenseId);
       });
+      
+      try {
+        const result = await deleteExpense(session, expenseId);
+        if (!result) {
+          // If deletion failed, revert the optimistic update
+          queryClient.setQueryData(['expenses'], previousExpenses);
+          throw new Error("Failed to delete expense");
+        }
+        return expenseId;
+      } catch (error) {
+        // Revert the optimistic update on error
+        queryClient.setQueryData(['expenses'], previousExpenses);
+        console.error("Error in deleteExpenseMutation:", error);
+        throw error;
+      }
+    },
+    onSuccess: (expenseId) => {
+      console.log("Successfully deleted expense:", expenseId);
       
       // Explicitly invalidate the expenses query to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['expenses'] });

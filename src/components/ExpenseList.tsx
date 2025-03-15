@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Receipt, User, Users, Trash2 } from "lucide-react";
+import { Receipt, User, Users, Trash2, Loader2 } from "lucide-react";
 import { Expense, Friend, FriendGroup } from "@/types/expense";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,10 +23,18 @@ interface ExpenseListProps {
   friends: Friend[];
   groups?: FriendGroup[];
   onDeleteExpense?: (expenseId: string) => void;
+  isDeleting?: boolean;
 }
 
-export const ExpenseList = ({ expenses, friends, groups = [], onDeleteExpense }: ExpenseListProps) => {
+export const ExpenseList = ({ 
+  expenses, 
+  friends, 
+  groups = [], 
+  onDeleteExpense,
+  isDeleting = false
+}: ExpenseListProps) => {
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   if (!Array.isArray(expenses) || expenses.length === 0) {
     return (
@@ -53,7 +61,13 @@ export const ExpenseList = ({ expenses, friends, groups = [], onDeleteExpense }:
     if (expenseToDelete && onDeleteExpense) {
       onDeleteExpense(expenseToDelete);
       setExpenseToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
+  };
+
+  const openDeleteDialog = (expenseId: string) => {
+    setExpenseToDelete(expenseId);
+    setIsDeleteDialogOpen(true);
   };
 
   return (
@@ -101,40 +115,55 @@ export const ExpenseList = ({ expenses, friends, groups = [], onDeleteExpense }:
                   Split among {expense.splits?.length || 0} {expense.splits?.length === 1 ? 'person' : 'people'}
                 </div>
                 {onDeleteExpense && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="mt-2 text-muted-foreground hover:text-destructive"
-                        onClick={() => setExpenseToDelete(expense.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Expense</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this expense? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setExpenseToDelete(null)}>
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive">
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="mt-2 text-muted-foreground hover:text-destructive"
+                    onClick={() => openDeleteDialog(expense.id)}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting && expenseToDelete === expense.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
                 )}
               </div>
             </div>
           </Card>
         );
       })}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this expense? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setExpenseToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="bg-destructive"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
