@@ -32,19 +32,26 @@ export default function Home() {
   // Filter expenses and friends based on selected group
   const filteredExpenses = getFilteredExpenses(expenses, selectedGroupId);
   
-  // Create a Map of friend IDs to friend objects, making sure we handle each entry correctly
+  // Create a Map of friend IDs to friend objects properly
   const friendsMap = new Map<string, Friend>();
-  friends.forEach(friend => {
-    if (friend && friend.id) {
-      friendsMap.set(friend.id, friend);
-    }
-  });
+  if (Array.isArray(friends)) {
+    friends.forEach(friend => {
+      if (friend && friend.id) {
+        friendsMap.set(String(friend.id), friend);
+      }
+    });
+  }
   
   // Filter out expenses with invalid payers or splits
   const validExpenses = filteredExpenses.filter(expense => {
-    const hasPayer = friends.some(f => f.id === expense.paidBy);
+    // Check if the expense has valid data
+    if (!expense || !expense.paidBy || !Array.isArray(expense.splits)) {
+      return false;
+    }
+    
+    const hasPayer = friends.some(f => String(f.id) === String(expense.paidBy));
     const validSplits = expense.splits.filter(split => 
-      friends.some(f => f.id === split.friendId)
+      split && split.friendId && friends.some(f => String(f.id) === String(split.friendId))
     );
     
     // Only include expenses with a valid payer and at least one valid split

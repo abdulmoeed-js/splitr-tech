@@ -38,7 +38,16 @@ export const ExpenseList = ({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [localIsDeleting, setLocalIsDeleting] = useState(false);
   
-  if (!Array.isArray(expenses) || expenses.length === 0) {
+  if (!Array.isArray(expenses)) {
+    console.error("Expenses is not an array:", expenses);
+    return (
+      <div className="text-center text-muted-foreground py-6">
+        Error loading expenses
+      </div>
+    );
+  }
+
+  if (expenses.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-6">
         No expenses found
@@ -60,34 +69,46 @@ export const ExpenseList = ({
   };
 
   const handleDelete = async () => {
-    if (expenseToDelete && onDeleteExpense) {
-      try {
-        setLocalIsDeleting(true);
-        const result = await onDeleteExpense(expenseToDelete);
-        
-        if (result === false) {
-          toast({
-            title: "Error",
-            description: "Failed to delete expense. Please try again.",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error("Error in handleDelete:", error);
+    if (!expenseToDelete || !onDeleteExpense) {
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+    
+    try {
+      setLocalIsDeleting(true);
+      console.log("Attempting to delete expense:", expenseToDelete);
+      const result = await onDeleteExpense(expenseToDelete);
+      
+      if (result === false) {
+        console.error("Delete operation returned false");
         toast({
           title: "Error",
-          description: "An unexpected error occurred while deleting the expense.",
+          description: "Failed to delete expense. Please try again.",
           variant: "destructive"
         });
-      } finally {
-        setLocalIsDeleting(false);
-        setExpenseToDelete(null);
-        setIsDeleteDialogOpen(false);
+      } else {
+        console.log("Delete operation succeeded");
+        toast({
+          title: "Success",
+          description: "Expense deleted successfully"
+        });
       }
+    } catch (error) {
+      console.error("Error in handleDelete:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while deleting the expense.",
+        variant: "destructive"
+      });
+    } finally {
+      setLocalIsDeleting(false);
+      setExpenseToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
 
   const openDeleteDialog = (expenseId: string) => {
+    console.log("Opening delete dialog for expense:", expenseId);
     setExpenseToDelete(expenseId);
     setIsDeleteDialogOpen(true);
   };

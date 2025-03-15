@@ -11,6 +11,11 @@ export const deleteExpense = async (
   
   if (!session?.user) {
     console.log("No active session, cannot delete expense");
+    toast({
+      title: "Authentication required",
+      description: "You must be logged in to delete expenses",
+      variant: "destructive"
+    });
     return false;
   }
 
@@ -24,7 +29,12 @@ export const deleteExpense = async (
     
     if (splitError) {
       console.error("Error deleting expense splits:", splitError);
-      throw splitError;
+      toast({
+        title: "Error",
+        description: "Failed to delete expense splits: " + splitError.message,
+        variant: "destructive"
+      });
+      return false;
     }
     
     console.log("Successfully deleted splits for expense ID:", expenseId);
@@ -39,14 +49,27 @@ export const deleteExpense = async (
     
     if (expenseError) {
       console.error("Error deleting expense:", expenseError);
-      throw expenseError;
+      toast({
+        title: "Error",
+        description: "Failed to delete expense: " + expenseError.message,
+        variant: "destructive"
+      });
+      return false;
     }
     
     console.log("Successfully deleted expense:", expenseId);
+    toast({
+      title: "Success",
+      description: "Expense deleted successfully"
+    });
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in deleteExpense:", error);
-    // Return false to indicate failure but don't throw to prevent UI from breaking
+    toast({
+      title: "Error",
+      description: error.message || "An unexpected error occurred while deleting the expense",
+      variant: "destructive"
+    });
     return false;
   }
 };
