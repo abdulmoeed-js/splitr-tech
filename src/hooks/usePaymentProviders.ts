@@ -8,7 +8,7 @@ export interface PaymentProvider {
   id: string;
   provider: string;
   isEnabled: boolean;
-  settings?: Record<string, any>;
+  settings?: Record<string, any> | null;
 }
 
 export const usePaymentProviders = () => {
@@ -36,11 +36,11 @@ export const usePaymentProviders = () => {
 
         if (data && data.length > 0) {
           // Map database providers to our state format
-          const dbProviders = data.map(item => ({
+          const dbProviders: PaymentProvider[] = data.map(item => ({
             id: item.id,
             provider: item.provider,
             isEnabled: item.is_enabled || false,
-            settings: item.settings
+            settings: item.settings as Record<string, any> | null
           }));
 
           // Merge with our default providers to ensure we always have all providers

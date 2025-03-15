@@ -28,8 +28,10 @@ export const useSettleReminderMutation = (session: Session | null) => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (reminder: PaymentReminder) => settleReminder(reminder, session),
-    onSuccess: (reminder) => {
+    mutationFn: async (reminder: PaymentReminder) => settleReminder(session, reminder),
+    onSuccess: (success, reminder) => {
+      if (!success) return;
+      
       // Update reminders list
       queryClient.setQueryData(['reminders'], (oldReminders: PaymentReminder[] = []) => 
         oldReminders.map(r => 
