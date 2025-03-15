@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, Dispatch, SetStateAction } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +16,8 @@ interface SettlementDialogProps {
   amount: number;
   paymentMethods: PaymentMethod[];
   onSettleDebt: (payment: SettlementPayment) => void;
+  isOpen?: boolean;
+  onOpenChange?: Dispatch<SetStateAction<boolean>>;
 }
 
 export const SettlementDialog = ({
@@ -23,12 +25,18 @@ export const SettlementDialog = ({
   toFriend,
   amount,
   paymentMethods,
-  onSettleDebt
+  onSettleDebt,
+  isOpen,
+  onOpenChange
 }: SettlementDialogProps) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank">("in-app");
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>("");
   const [settlementAmount, setSettlementAmount] = useState(amount ? amount.toFixed(2) : "0.00");
+
+  // Use external state if provided, otherwise use internal state
+  const open = isOpen !== undefined ? isOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   // Filter payment methods by type
   const getPaymentMethodsByType = (type: string) => {

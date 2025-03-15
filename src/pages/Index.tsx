@@ -128,13 +128,17 @@ export default function Home() {
           </Tabs>
           
           {/* Settlement Dialog */}
-          <SettlementDialog
-            fromFriend={{id: "1", name: "You"}}
-            toFriend={selectedReminder?.toFriendId ? friends.find(f => f.id === selectedReminder.toFriendId) || {id: "unknown", name: "Unknown"} : {id: "unknown", name: "Unknown"}}
-            amount={selectedReminder?.amount || 0}
-            paymentMethods={[]}
-            onSettleDebt={handleSettleUp}
-          />
+          {selectedReminder && (
+            <SettlementDialog
+              fromFriend={{id: "1", name: "You"}}
+              toFriend={selectedReminder?.toFriendId ? friends.find(f => f.id === selectedReminder.toFriendId) || {id: "unknown", name: "Unknown"} : {id: "unknown", name: "Unknown"}}
+              amount={selectedReminder?.amount || 0}
+              paymentMethods={[]}
+              onSettleDebt={handleSettleUp}
+              isOpen={isSettlementOpen}
+              onOpenChange={setIsSettlementOpen}
+            />
+          )}
         </div>
       </div>
     </div>
