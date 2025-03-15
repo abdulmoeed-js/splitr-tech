@@ -3,16 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Friend } from "@/types/expense";
 import { Session } from "@supabase/supabase-js";
 
-// Get friends from database or default friends for non-authenticated users
+// Get friends from database or empty array for non-authenticated users
 export const fetchFriends = async (session: Session | null, userName: string) => {
   if (!session?.user) {
-    // Return default friends for non-authenticated users
-    return [
-      { id: "1", name: userName },
-      { id: "2", name: "Alice" },
-      { id: "3", name: "Bob" },
-      { id: "4", name: "Charlie" },
-    ] as Friend[];
+    // Return empty array for non-authenticated users
+    return [] as Friend[];
   }
 
   // First, ensure the user has a "You" entry

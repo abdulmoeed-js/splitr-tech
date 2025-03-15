@@ -5,39 +5,14 @@ import { Session } from "@supabase/supabase-js";
 import { generateUUID, uuidToFriendId } from "./uuidUtils";
 
 /**
- * Fetches expenses from the database or returns mock data if not authenticated
+ * Fetches expenses from the database
  */
 export const fetchExpenses = async (session: Session | null): Promise<Expense[]> => {
   console.log("Fetching expenses, authenticated:", !!session?.user);
   
   if (!session?.user) {
-    console.log("No authenticated user, returning mock expense data");
-    // Return mock data for development without auth
-    return [
-      {
-        id: "1",
-        description: "Dinner",
-        amount: 100,
-        paidBy: "1", // You
-        date: new Date(),
-        splits: [
-          { friendId: "1", amount: 50 },
-          { friendId: "2", amount: 50 }
-        ]
-      },
-      {
-        id: "2",
-        description: "Movie tickets",
-        amount: 60,
-        paidBy: "2", // Alice
-        date: new Date(Date.now() - 86400000),
-        splits: [
-          { friendId: "1", amount: 20 },
-          { friendId: "2", amount: 20 },
-          { friendId: "3", amount: 20 }
-        ]
-      }
-    ] as Expense[];
+    console.log("No authenticated user, returning empty expense array");
+    return [] as Expense[];
   }
 
   try {

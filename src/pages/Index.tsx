@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useSession } from "@/hooks/useSession";
@@ -105,51 +104,70 @@ export default function Home() {
     onDeleteExpense: handleDeleteExpense
   };
 
+  const hasNoData = expenses.length === 0 && friends.length === 0;
+
   return (
     <div className="container px-4 py-8 mx-auto max-w-4xl">
       <div className="space-y-6">
         {/* Main content area */}
         <div className="space-y-6">
-          {/* Balance summary without passing balances directly */}
-          <BalanceSummary
-            expenses={validExpenses}
-            friends={filteredFriends}
-            payments={payments}
-          />
-
-          {/* Add Expense Button */}
-          <div className="flex justify-end">
-            <AddExpenseDialog
-              onAddExpense={handleAddNewExpense}
-              friends={filteredFriends}
-            />
-          </div>
-
-          {/* Main content tabs */}
-          <Tabs defaultValue="dashboard" className="mt-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="dashboard" className="mt-4">
-              <ExpenseDashboard 
-                {...dashboardProps}
-              />
-            </TabsContent>
-
-            <TabsContent value="expenses" className="mt-4">
-              <ExpenseTabContent
+          {hasNoData ? (
+            <div className="text-center p-8 border rounded-lg">
+              <h2 className="text-2xl font-bold mb-4">Welcome to SplitWise</h2>
+              <p className="mb-6 text-muted-foreground">
+                Start by adding friends and expenses to track your shared spending
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <AddExpenseDialog
+                  onAddExpense={handleAddNewExpense}
+                  friends={friends}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Balance summary without passing balances directly */}
+              <BalanceSummary
                 expenses={validExpenses}
                 friends={filteredFriends}
-                reminders={reminders}
-                onMarkReminderAsRead={handleMarkReminderAsRead}
-                onSettleReminder={openSettlementDialog}
                 payments={payments}
-                onDeleteExpense={handleDeleteExpense}
               />
-            </TabsContent>
-          </Tabs>
+
+              {/* Add Expense Button */}
+              <div className="flex justify-end">
+                <AddExpenseDialog
+                  onAddExpense={handleAddNewExpense}
+                  friends={filteredFriends}
+                />
+              </div>
+
+              {/* Main content tabs */}
+              <Tabs defaultValue="dashboard" className="mt-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="dashboard" className="mt-4">
+                  <ExpenseDashboard 
+                    {...dashboardProps}
+                  />
+                </TabsContent>
+
+                <TabsContent value="expenses" className="mt-4">
+                  <ExpenseTabContent
+                    expenses={validExpenses}
+                    friends={filteredFriends}
+                    reminders={reminders}
+                    onMarkReminderAsRead={handleMarkReminderAsRead}
+                    onSettleReminder={openSettlementDialog}
+                    payments={payments}
+                    onDeleteExpense={handleDeleteExpense}
+                  />
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
           
           {/* Settlement Dialog */}
           {selectedReminder && (

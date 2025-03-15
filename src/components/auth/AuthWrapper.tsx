@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/components/ui/use-toast";
 
 export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -28,6 +29,11 @@ export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
+    toast({
+      title: "Authentication Required",
+      description: "Please log in to view this page",
+      variant: "destructive",
+    });
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
