@@ -1,13 +1,21 @@
 
-import React from "react";
+import { SVGProps } from "react";
 
-export const PayPalIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    className={className}
-    fill="currentColor"
-  >
-    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.473 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.58 2.977-2.477 4.532-5.092 4.532h-2.19c-1.573 0-2.905 1.145-3.15 2.702l-1.122 7.106c-.074.462.261.883.731.883h4.607c.524 0 .968-.382 1.05-.9l.948-6.01c.074-.462.496-.844 1.02-.844h.651c4.299 0 7.665-1.747 8.647-6.797.364-1.874.096-3.261-.452-4.385z" />
-  </svg>
-);
+export function PayPalIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M7 11l3-9h5c3 0 3.5 1.5 3 4s-2 4-5 4H9.7" />
+      <path d="M10.2 22H4.8c-.4 0-.8-.3-.9-.7L2.2 13c-.1-.2 0-.4.2-.5.1-.1.3-.2.4-.2" />
+      <path d="M18 7c2.5 0 3.5 1.5 3 4s-2 4-5 4h-4l-1 3" />
+    </svg>
+  );
+}

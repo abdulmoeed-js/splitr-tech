@@ -3,21 +3,25 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./useSession";
 import { toast } from "@/components/ui/use-toast";
-import { PaymentProvider } from "@/types/payment";
+
+export interface PaymentProvider {
+  id: string;
+  provider: string;
+  isEnabled: boolean;
+  settings?: Record<string, any>;
+}
 
 export const usePaymentProviders = () => {
-  const [providers, setProviders] = useState<PaymentProvider[]>([]);
+  const [providers, setProviders] = useState<PaymentProvider[]>([
+    { id: 'stripe', provider: 'stripe', isEnabled: false },
+    { id: 'paypal', provider: 'paypal', isEnabled: false }
+  ]);
   const [isLoading, setIsLoading] = useState(true);
   const { session } = useSession();
 
-  // Fetch payment providers
   useEffect(() => {
     const fetchProviders = async () => {
       if (!session?.user) {
-        setProviders([
-          { id: 'local-stripe', provider: 'stripe', isEnabled: false },
-          { id: 'local-paypal', provider: 'paypal', isEnabled: false }
-        ]);
         setIsLoading(false);
         return;
       }
@@ -30,39 +34,43 @@ export const usePaymentProviders = () => {
 
         if (error) throw error;
 
-        // Transform data with proper type conversion
-        const transformedData: PaymentProvider[] = data.map(item => ({
-          id: item.id,
-          provider: item.provider,
-          isEnabled: item.is_enabled,
-          settings: item.settings as Record<string, any> | null
-        }));
+        if (data && data.length > 0) {
+          // Map database providers to our state format
+          const dbProviders = data.map(item => ({
+            id: item.id,
+            provider: item.provider,
+            isEnabled: item.is_enabled || false,
+            settings: item.settings
+          }));
 
-        // Ensure we have default providers if none exist
-        if (transformedData.length === 0) {
-          // Create default records
-          await createDefaultProviders(session.user.id);
-          
-          setProviders([
-            { id: 'pending-stripe', provider: 'stripe', isEnabled: false },
-            { id: 'pending-paypal', provider: 'paypal', isEnabled: false }
-          ]);
+          // Merge with our default providers to ensure we always have all providers
+          const mergedProviders = providers.map(defaultProvider => {
+            const dbProvider = dbProviders.find(p => p.provider === defaultProvider.provider);
+            return dbProvider || defaultProvider;
+          });
+
+          setProviders(mergedProviders);
         } else {
-          setProviders(transformedData);
+          // If no providers in DB, initialize with defaults
+          const initialProviders = [
+            { provider: 'stripe', is_enabled: false, user_id: session.user.id },
+            { provider: 'paypal', is_enabled: false, user_id: session.user.id }
+          ];
+
+          // Insert default providers
+          const { error: insertError } = await supabase
+            .from('payment_provider_settings')
+            .insert(initialProviders);
+
+          if (insertError) throw insertError;
         }
       } catch (error: any) {
-        console.error("Error fetching payment providers:", error.message);
+        console.error('Error fetching payment providers:', error);
         toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load payment providers"
+          title: 'Error',
+          description: 'Failed to load payment providers',
+          variant: 'destructive'
         });
-        
-        // Set default local state for UI
-        setProviders([
-          { id: 'error-stripe', provider: 'stripe', isEnabled: false },
-          { id: 'error-paypal', provider: 'paypal', isEnabled: false }
-        ]);
       } finally {
         setIsLoading(false);
       }
@@ -71,94 +79,68 @@ export const usePaymentProviders = () => {
     fetchProviders();
   }, [session]);
 
-  // Create default provider records
-  const createDefaultProviders = async (userId: string) => {
-    try {
-      await supabase
-        .from('payment_provider_settings')
-        .insert([
-          {
-            user_id: userId,
-            provider: 'stripe',
-            is_enabled: false,
-            settings: {}
-          },
-          {
-            user_id: userId,
-            provider: 'paypal',
-            is_enabled: false,
-            settings: {}
-          }
-        ]);
-      
-      // Refetch providers after creating defaults
-      const { data } = await supabase
-        .from('payment_provider_settings')
-        .select('*')
-        .eq('user_id', userId);
-      
-      if (data) {
-        const transformedData: PaymentProvider[] = data.map(item => ({
-          id: item.id,
-          provider: item.provider,
-          isEnabled: item.is_enabled,
-          settings: item.settings as Record<string, any> | null
-        }));
-        setProviders(transformedData);
-      }
-    } catch (error: any) {
-      console.error("Error creating default providers:", error.message);
-    }
-  };
-
-  // Toggle provider enabled status
   const toggleProviderEnabled = async (providerName: string, enabled: boolean) => {
     if (!session?.user) {
       toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "You must be logged in to change provider settings"
+        title: 'Authentication required',
+        description: 'You must be logged in to change payment settings',
+        variant: 'destructive'
       });
       return;
     }
 
-    // Optimistically update the UI
-    setProviders(prevProviders => 
-      prevProviders.map(provider => 
-        provider.provider === providerName 
-          ? { ...provider, isEnabled: enabled } 
-          : provider
-      )
-    );
-
     try {
-      const provider = providers.find(p => p.provider === providerName);
-      
-      if (!provider) {
-        throw new Error(`Provider ${providerName} not found`);
+      // Update state optimistically
+      setProviders(prevProviders => 
+        prevProviders.map(provider => 
+          provider.provider === providerName 
+            ? { ...provider, isEnabled: enabled } 
+            : provider
+        )
+      );
+
+      // Check if provider exists in DB
+      const { data, error } = await supabase
+        .from('payment_provider_settings')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('provider', providerName)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 means no rows found, which is expected if the provider doesn't exist yet
+        throw error;
       }
 
-      const { error } = await supabase
-        .from('payment_provider_settings')
-        .update({ is_enabled: enabled })
-        .eq('id', provider.id)
-        .eq('user_id', session.user.id);
+      if (data?.id) {
+        // Update existing provider
+        const { error: updateError } = await supabase
+          .from('payment_provider_settings')
+          .update({ is_enabled: enabled })
+          .eq('id', data.id);
 
-      if (error) throw error;
+        if (updateError) throw updateError;
+      } else {
+        // Insert new provider
+        const { error: insertError } = await supabase
+          .from('payment_provider_settings')
+          .insert({
+            user_id: session.user.id,
+            provider: providerName,
+            is_enabled: enabled
+          });
+
+        if (insertError) throw insertError;
+      }
 
       toast({
-        title: `${providerName.charAt(0).toUpperCase() + providerName.slice(1)} ${enabled ? 'Enabled' : 'Disabled'}`,
-        description: `${providerName.charAt(0).toUpperCase() + providerName.slice(1)} payments are now ${enabled ? 'enabled' : 'disabled'}.`
+        title: 'Settings updated',
+        description: `${providerName} payment provider ${enabled ? 'enabled' : 'disabled'}`
       });
     } catch (error: any) {
-      console.error(`Error toggling ${providerName}:`, error.message);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: `Failed to update ${providerName} settings: ${error.message}`
-      });
+      console.error('Error updating payment provider:', error);
       
-      // Revert the optimistic update
+      // Revert state on error
       setProviders(prevProviders => 
         prevProviders.map(provider => 
           provider.provider === providerName 
@@ -166,6 +148,12 @@ export const usePaymentProviders = () => {
             : provider
         )
       );
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to update payment provider settings',
+        variant: 'destructive'
+      });
     }
   };
 

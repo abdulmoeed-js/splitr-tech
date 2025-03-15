@@ -1,43 +1,42 @@
 
-import { useCallback } from "react";
 import { Split } from "@/types/expense";
 
 export function useSplitCalculation() {
-  // Calculate the total percentage of splits
-  const calculateTotalPercentage = useCallback((splits: Split[]) => {
-    return splits.reduce((sum, split) => sum + (split.percentage || 0), 0);
-  }, []);
+  const calculateTotalPercentage = (splits: Split[]): number => {
+    return splits.reduce((total, split) => total + (split.percentage || 0), 0);
+  };
 
-  // Handle updating split amounts or percentages
-  const handleSplitChange = useCallback((
+  const handleSplitChange = (
     splits: Split[],
-    friendId: string, 
-    value: string, 
+    friendId: string,
+    value: string,
     field: 'amount' | 'percentage',
-    amount: number
-  ) => {
-    const numericValue = parseFloat(value) || 0;
-
-    // Create a new array with updated values
+    totalAmount: number
+  ): Split[] => {
+    const numericValue = parseFloat(value);
+    const isValidNumber = !isNaN(numericValue) && numericValue >= 0;
+    
     return splits.map(split => {
       if (split.friendId === friendId) {
         if (field === 'amount') {
           return {
             ...split,
-            amount: numericValue,
-            percentage: amount > 0 ? (numericValue / amount) * 100 : 0
+            amount: isValidNumber ? numericValue : 0,
+            // If changing amount, update percentage too
+            percentage: isValidNumber ? (numericValue / totalAmount) * 100 : 0
           };
-        } else {
+        } else if (field === 'percentage') {
           return {
             ...split,
-            percentage: numericValue,
-            amount: (numericValue / 100) * amount
+            percentage: isValidNumber ? numericValue : 0,
+            // If changing percentage, update amount too
+            amount: isValidNumber ? (totalAmount * numericValue) / 100 : 0
           };
         }
       }
       return split;
     });
-  }, []);
+  };
 
   return {
     calculateTotalPercentage,

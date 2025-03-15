@@ -1,6 +1,5 @@
 
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Friend, Split } from "@/types/expense";
 
 interface PercentageSplitProps {
@@ -16,34 +15,41 @@ export function PercentageSplit({
   totalPercentage,
   onSplitChange 
 }: PercentageSplitProps) {
+  // Create a map for quick lookup of friend names
+  const friendsMap = friends.reduce((map, friend) => {
+    map[friend.id] = friend.name;
+    return map;
+  }, {} as Record<string, string>);
+
+  const isValid = Math.abs(totalPercentage - 100) < 0.01;
+
   return (
-    <div className="space-y-4">
-      <div className="grid gap-2">
-        {splits.map((split) => {
-          const friend = friends.find(f => f.id === split.friendId);
-          return (
-            <Card key={split.friendId} className="p-2">
-              <div className="flex justify-between items-center">
-                <span>{friend?.name}</span>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={split.percentage || ''}
-                    onChange={(e) => onSplitChange(split.friendId, e.target.value, 'percentage')}
-                    className="w-20"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                  <span>%</span>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
+    <div className="space-y-3">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium">Split percentages</span>
+        <span className={`text-sm ${isValid ? 'text-green-500' : 'text-red-500'}`}>
+          {isValid ? 'Balanced' : `Total: ${totalPercentage.toFixed(2)}%`}
+        </span>
       </div>
-      <div className={`text-right text-sm font-medium ${totalPercentage !== 100 ? 'text-red-500' : ''}`}>
-        Total: {totalPercentage.toFixed(1)}% {totalPercentage !== 100 ? '(should be 100%)' : ''}
+      
+      <div className="space-y-2">
+        {splits.map((split) => (
+          <div key={split.friendId} className="flex justify-between items-center space-x-2">
+            <span className="text-sm flex-1">{friendsMap[split.friendId] || 'Unknown'}</span>
+            <div className="flex items-center">
+              <Input
+                type="number"
+                value={split.percentage || ''}
+                onChange={(e) => onSplitChange(split.friendId, e.target.value, 'percentage')}
+                className="w-20"
+                step="0.1"
+                min="0"
+                max="100"
+              />
+              <span className="text-sm ml-2">%</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

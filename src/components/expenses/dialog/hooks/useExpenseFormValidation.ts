@@ -1,6 +1,6 @@
 
-import { toast } from "@/components/ui/use-toast";
 import { Split } from "@/types/expense";
+import { Toast } from "@/components/ui/use-toast";
 
 interface ValidationParams {
   description: string;
@@ -8,8 +8,8 @@ interface ValidationParams {
   paidBy: string;
   selectedFriends: string[];
   splits: Split[];
-  splitMethod: "equal" | "custom" | "percentage";
-  toast: typeof toast;
+  splitMethod: string;
+  toast: (props: Toast) => void;
 }
 
 export function useExpenseFormValidation() {
@@ -22,9 +22,10 @@ export function useExpenseFormValidation() {
     splitMethod,
     toast
   }: ValidationParams): boolean => {
-    if (!description.trim() || !amount.trim()) {
+    if (!description.trim()) {
       toast({
-        title: "Please fill in all fields.",
+        title: "Missing Information",
+        description: "Please provide a description for the expense.",
         variant: "destructive",
       });
       return false;
@@ -33,7 +34,8 @@ export function useExpenseFormValidation() {
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) {
       toast({
-        title: "Please enter a valid amount.",
+        title: "Invalid Amount",
+        description: "Please enter a valid amount greater than zero.",
         variant: "destructive",
       });
       return false;
@@ -41,7 +43,8 @@ export function useExpenseFormValidation() {
 
     if (!paidBy) {
       toast({
-        title: "Please select who paid the expense.",
+        title: "Missing Information",
+        description: "Please select who paid for the expense.",
         variant: "destructive",
       });
       return false;
@@ -49,33 +52,53 @@ export function useExpenseFormValidation() {
 
     if (selectedFriends.length === 0) {
       toast({
-        title: "Please select at least one friend to split with.",
+        title: "Missing Information",
+        description: "Please select at least one friend to split with.",
         variant: "destructive",
       });
       return false;
     }
 
-    const finalSplits = splits.filter(split => 
+    // Check if we have proper splits for the selected friends
+    const validSplits = splits.filter(split => 
       selectedFriends.includes(split.friendId)
     );
 
+    if (validSplits.length === 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please specify how to split the expense.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // For percentage splits, ensure they sum to 100%
     if (splitMethod === "percentage") {
-      const totalPercentage = finalSplits.reduce((sum, split) => sum + (split.percentage || 0), 0);
+      const totalPercentage = validSplits.reduce((sum, split) => sum + (split.percentage || 0), 0);
+      
       if (Math.abs(totalPercentage - 100) > 0.01) {
         toast({
-          title: "Percentages must add up to 100%",
+          title: "Invalid Split",
+          description: `The total percentage should be 100%. Current total: ${totalPercentage.toFixed(2)}%`,
           variant: "destructive",
         });
         return false;
       }
     }
 
-    if (finalSplits.length === 0) {
-      toast({
-        title: "Please add at least one split.",
-        variant: "destructive",
-      });
-      return false;
+    // For custom amount splits, ensure they sum to the total
+    if (splitMethod === "custom") {
+      const totalSplit = validSplits.reduce((sum, split) => sum + split.amount, 0);
+      
+      if (Math.abs(totalSplit - amountValue) > 0.01) {
+        toast({
+          title: "Invalid Split",
+          description: `The split amounts should sum to the total expense (${amountValue}). Current sum: ${totalSplit.toFixed(2)}`,
+          variant: "destructive",
+        });
+        return false;
+      }
     }
 
     return true;
