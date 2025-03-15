@@ -8,8 +8,9 @@ import { useFriends } from "@/hooks/useFriends";
 interface ExpensesContextType {
   expenses: Expense[];
   isExpensesLoading: boolean;
+  refreshData: () => Promise<any>;
   handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => void;
-  handleDeleteExpense: (expenseId: string) => void;
+  handleDeleteExpense: (expenseId: string) => Promise<boolean>;
   // Add friends-related properties
   isLoaded: boolean;
   friends: Friend[];
@@ -26,6 +27,7 @@ export const ExpensesProvider: React.FC<{ children: ReactNode }> = ({ children }
   const { 
     expenses, 
     isExpensesLoading,
+    refreshData,
     handleAddExpense,
     handleDeleteExpense
   } = useExpenseData(session);
@@ -45,6 +47,7 @@ export const ExpensesProvider: React.FC<{ children: ReactNode }> = ({ children }
   const value = {
     expenses,
     isExpensesLoading,
+    refreshData,
     handleAddExpense,
     handleDeleteExpense,
     // Add friends-related properties
