@@ -16,12 +16,15 @@ export function DashboardBalanceSummary({
   payments,
   onAddExpense
 }: DashboardBalanceSummaryProps) {
+  // Make sure all friends including "You" are shown in the balance summary
+  const allFriends = filteredFriends;
+  
   return (
     <>
       {/* Balance summary component */}
       <BalanceSummary
         expenses={expenses}
-        friends={filteredFriends}
+        friends={allFriends}
         payments={payments}
       />
 
@@ -29,7 +32,7 @@ export function DashboardBalanceSummary({
       <div className="flex justify-end">
         <AddExpenseDialog
           onAddExpense={onAddExpense}
-          friends={filteredFriends}
+          friends={allFriends}
         />
       </div>
     </>

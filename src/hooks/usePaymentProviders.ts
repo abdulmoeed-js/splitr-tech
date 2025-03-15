@@ -53,8 +53,8 @@ export const usePaymentProviders = () => {
         } else {
           // If no providers in DB, initialize with defaults
           const initialProviders = [
-            { provider: 'stripe', is_enabled: false, user_id: session.user.id },
-            { provider: 'paypal', is_enabled: false, user_id: session.user.id }
+            { provider: 'stripe', is_enabled: false, user_id: session.user.id, settings: null },
+            { provider: 'paypal', is_enabled: false, user_id: session.user.id, settings: null }
           ];
 
           // Insert default providers
@@ -62,7 +62,10 @@ export const usePaymentProviders = () => {
             .from('payment_provider_settings')
             .insert(initialProviders);
 
-          if (insertError) throw insertError;
+          if (insertError) {
+            console.error("Error initializing payment providers:", insertError);
+            // Don't throw here, just log the error and continue
+          }
         }
       } catch (error: any) {
         console.error('Error fetching payment providers:', error);
@@ -104,20 +107,16 @@ export const usePaymentProviders = () => {
         .from('payment_provider_settings')
         .select('id')
         .eq('user_id', session.user.id)
-        .eq('provider', providerName)
-        .single();
+        .eq('provider', providerName);
 
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 means no rows found, which is expected if the provider doesn't exist yet
-        throw error;
-      }
+      if (error) throw error;
 
-      if (data?.id) {
+      if (data && data.length > 0) {
         // Update existing provider
         const { error: updateError } = await supabase
           .from('payment_provider_settings')
           .update({ is_enabled: enabled })
-          .eq('id', data.id);
+          .eq('id', data[0].id);
 
         if (updateError) throw updateError;
       } else {
@@ -127,7 +126,8 @@ export const usePaymentProviders = () => {
           .insert({
             user_id: session.user.id,
             provider: providerName,
-            is_enabled: enabled
+            is_enabled: enabled,
+            settings: null
           });
 
         if (insertError) throw insertError;

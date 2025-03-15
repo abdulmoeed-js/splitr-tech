@@ -28,6 +28,9 @@ export const FriendsManagement = ({
 }: FriendsManagementProps) => {
   // Calculate balances
   const balances = calculateBalances(expenses, friends, payments);
+  
+  // Make sure the "You" friend isn't filtered out
+  const displayFriends = friends;
 
   return (
     <div className="space-y-6">
@@ -39,7 +42,7 @@ export const FriendsManagement = ({
       <QuickInvite onInviteFriend={onInviteFriend} />
 
       <FriendsList 
-        friends={friends} 
+        friends={displayFriends}
         onRemoveFriend={onRemoveFriend}
         onUpdateFriend={onUpdateFriend}
         balances={balances}

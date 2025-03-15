@@ -26,7 +26,8 @@ export const fetchFriends = async (session: Session | null, userName: string) =>
         .from('friends')
         .insert({
           user_id: session.user.id,
-          name: userName
+          name: userName,
+          is_complete: true
         });
     }
 

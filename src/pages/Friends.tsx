@@ -25,6 +25,11 @@ const FriendsPage = () => {
   const [isSettlementOpen, setIsSettlementOpen] = useState(false);
 
   const handleSettleUp = (friendId: string) => {
+    // Don't allow settling up with yourself
+    if (friends.find(f => f.id === friendId)?.name === userName) {
+      return;
+    }
+    
     setSelectedFriendId(friendId);
     setIsSettlementOpen(true);
   };
@@ -37,6 +42,9 @@ const FriendsPage = () => {
 
   // Find the selected friend
   const selectedFriend = selectedFriendId ? friends.find(f => f.id === selectedFriendId) : null;
+  
+  // Get the current user as a friend entity
+  const currentUserAsFriend = friends.find(f => f.name === userName) || null;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -58,9 +66,9 @@ const FriendsPage = () => {
       )}
 
       {/* Settlement Dialog */}
-      {selectedFriend && (
+      {selectedFriend && currentUserAsFriend && (
         <SettlementDialog
-          fromFriend={{id: "1", name: "You"}}
+          fromFriend={currentUserAsFriend}
           toFriend={selectedFriend}
           amount={0} // This will be calculated inside the settlement dialog
           paymentMethods={[]}

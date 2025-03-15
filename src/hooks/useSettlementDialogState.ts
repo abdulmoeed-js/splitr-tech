@@ -12,11 +12,21 @@ export function useSettlementDialogState() {
     setIsSettlementOpen(true);
   };
 
+  // Handle closing the settlement dialog
+  const closeSettlementDialog = () => {
+    setIsSettlementOpen(false);
+    // Use a slight delay to ensure smooth UI transition
+    setTimeout(() => {
+      setSelectedReminder(null);
+    }, 200);
+  };
+
   return {
     isSettlementOpen,
     setIsSettlementOpen,
     selectedReminder,
     setSelectedReminder,
-    openSettlementDialog
+    openSettlementDialog,
+    closeSettlementDialog
   };
 }
