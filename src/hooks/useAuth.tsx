@@ -16,9 +16,14 @@ export const useAuth = () => {
     // Get initial session and set up auth state change listener
     const fetchInitialSession = async () => {
       try {
+        setLoading(true);
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         console.log("Initial session fetch complete, user authenticated:", !!initialSession?.user);
-        setSession(initialSession);
+        
+        if (initialSession) {
+          console.log("Found existing session, user is authenticated");
+          setSession(initialSession);
+        }
       } catch (error) {
         console.error("Error fetching initial session:", error);
       } finally {
@@ -31,13 +36,22 @@ export const useAuth = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log("Auth state changed:", event, "Session exists:", !!currentSession);
-        setSession(currentSession);
         
-        // Handle specific auth events
-        if (event === 'SIGNED_IN') {
-          console.log("User signed in successfully");
-        } else if (event === 'SIGNED_OUT') {
-          console.log("User signed out successfully");
+        if (currentSession) {
+          setSession(currentSession);
+          
+          // Handle specific auth events
+          if (event === 'SIGNED_IN') {
+            console.log("User signed in successfully");
+            navigate("/");
+          }
+        } else {
+          setSession(null);
+          
+          if (event === 'SIGNED_OUT') {
+            console.log("User signed out successfully");
+            navigate("/login");
+          }
         }
       }
     );
@@ -46,7 +60,7 @@ export const useAuth = () => {
       console.log("Cleaning up auth listeners");
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const handleSignOut = async () => {
     console.log("Sign out requested");
@@ -64,6 +78,8 @@ export const useAuth = () => {
         description: "You have been signed out of your account",
       });
       
+      // Clear session state
+      setSession(null);
       navigate("/login");
     } catch (error: any) {
       console.error("Error in sign out process:", error);

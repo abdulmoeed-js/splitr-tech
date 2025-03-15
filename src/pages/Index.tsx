@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useSession } from "@/hooks/useSession";
 import { useFriends } from "@/hooks/useFriends";
@@ -13,11 +14,20 @@ import { ExpenseDashboard } from "@/components/expenses/ExpenseDashboard";
 import { ExpenseTabContent } from "@/components/expenses/ExpenseTabContent";
 import { AddExpenseDialog } from "@/components/expenses/dialog/AddExpenseDialog";
 import { SettlementDialog } from "@/components/settlements/SettlementDialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Home() {
   const { session, userName } = useSession();
-  const { expenses, handleAddExpense, handleDeleteExpense } = useExpenses();
-  const { friends, handleAddFriend, handleInviteFriend } = useFriends(session, userName);
+  const { 
+    expenses, isExpensesLoading, refreshData: refreshExpenses 
+  } = useExpenses();
+  
+  const { 
+    friends, isFriendsLoading, refreshData: refreshFriends, 
+    handleAddFriend, handleInviteFriend 
+  } = useFriends(session, userName);
+  
   const { groups, addGroup } = useGroups(session, friends);
   const { payments, settleDebt } = usePayments(session);
   const { reminders, handleMarkReminderAsRead, handleSettleReminder } = useReminders(session);
@@ -27,6 +37,60 @@ export default function Home() {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isSettlementOpen, setIsSettlementOpen] = useState(false);
   const [selectedReminder, setSelectedReminder] = useState<PaymentReminder | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Effect to refresh data when component mounts
+  useEffect(() => {
+    if (session?.user) {
+      console.log("Home component mounted, refreshing data");
+      const refreshAllData = async () => {
+        try {
+          await Promise.all([
+            refreshExpenses(),
+            refreshFriends()
+          ]);
+        } catch (error) {
+          console.error("Error refreshing data:", error);
+        }
+      };
+      
+      refreshAllData();
+    }
+  }, [session?.user, refreshExpenses, refreshFriends]);
+
+  // Manual refresh function
+  const handleRefreshData = async () => {
+    if (!session?.user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to refresh data",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refreshExpenses(),
+        refreshFriends()
+      ]);
+      
+      toast({
+        title: "Data Refreshed",
+        description: "Your data has been refreshed successfully"
+      });
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast({
+        title: "Refresh Failed",
+        description: "There was an error refreshing your data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Filter expenses and friends based on selected group
   const filteredExpenses = getFilteredExpenses(expenses, selectedGroupId);
@@ -104,14 +168,32 @@ export default function Home() {
     onDeleteExpense: handleDeleteExpense
   };
 
-  const hasNoData = expenses.length === 0 && friends.length === 0;
+  const isLoading = isExpensesLoading || isFriendsLoading;
+  const hasNoData = !isLoading && expenses.length === 0 && friends.length === 0;
 
   return (
     <div className="container px-4 py-8 mx-auto max-w-4xl">
       <div className="space-y-6">
+        {/* Refresh button */}
+        <div className="flex justify-end">
+          <Button 
+            variant="outline" 
+            onClick={handleRefreshData} 
+            disabled={isRefreshing || !session?.user}
+            className="mb-4"
+          >
+            {isRefreshing ? "Refreshing..." : "Refresh Data"}
+          </Button>
+        </div>
+        
         {/* Main content area */}
         <div className="space-y-6">
-          {hasNoData ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center min-h-[30vh]">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+              <p className="text-muted-foreground">Loading your data...</p>
+            </div>
+          ) : hasNoData ? (
             <div className="text-center p-8 border rounded-lg">
               <h2 className="text-2xl font-bold mb-4">Welcome to SplitWise</h2>
               <p className="mb-6 text-muted-foreground">
@@ -185,4 +267,4 @@ export default function Home() {
       </div>
     </div>
   );
-}
+};

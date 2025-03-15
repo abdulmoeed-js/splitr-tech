@@ -15,11 +15,17 @@ export const useExpenseData = (session: Session | null) => {
   const [isDeletingExpense, setIsDeletingExpense] = useState(false);
 
   // Fetch expenses from Supabase
-  const { data: expenses = [], isLoading: isExpensesLoading } = useQuery({
-    queryKey: ['expenses'],
+  const { 
+    data: expenses = [], 
+    isLoading: isExpensesLoading,
+    error: expensesError,
+    refetch: refetchExpenses
+  } = useQuery({
+    queryKey: ['expenses', session?.user?.id],
     queryFn: () => fetchExpenses(session),
-    enabled: true, // Always enabled, returns mock data when not authenticated
+    enabled: !!session?.user, // Only fetch when authenticated
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3, // Retry 3 times on failure
     // Add error handling
     meta: {
       onError: (error: any) => {
@@ -42,6 +48,10 @@ export const useExpenseData = (session: Session | null) => {
       splits: Split[];
       groupId?: string;
     }) => {
+      if (!session?.user) {
+        throw new Error("You must be logged in to add expenses");
+      }
+
       try {
         // Ensure IDs are strings
         const processedPaidBy = String(newExpense.paidBy);
@@ -52,19 +62,7 @@ export const useExpenseData = (session: Session | null) => {
           friendId: String(split.friendId)
         }));
         
-        // Use correct function based on authentication state
-        if (!session?.user) {
-          // Create a local expense for non-authenticated users
-          return createLocalExpense(
-            newExpense.description,
-            newExpense.amount,
-            processedPaidBy,
-            processedSplits,
-            newExpense.groupId
-          );
-        }
-
-        // For authenticated users
+        // Create expense in database
         return createDatabaseExpense(
           session,
           newExpense.description,
@@ -82,13 +80,13 @@ export const useExpenseData = (session: Session | null) => {
       console.log("Successfully added expense:", newExpense);
       
       // Update local cache
-      queryClient.setQueryData(['expenses'], (oldExpenses: Expense[] = []) => {
+      queryClient.setQueryData(['expenses', session?.user?.id], (oldExpenses: Expense[] = []) => {
         console.log("Updating expenses cache with new expense");
         return [newExpense, ...oldExpenses];
       });
       
       // Explicitly invalidate the expenses query to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', session?.user?.id] });
       
       toast({
         title: "Expense Added",
@@ -108,14 +106,18 @@ export const useExpenseData = (session: Session | null) => {
   // Delete expense mutation
   const deleteExpenseMutation = useMutation({
     mutationFn: async (expenseId: string) => {
+      if (!session?.user) {
+        throw new Error("You must be logged in to delete expenses");
+      }
+
       console.log("Starting delete expense mutation for ID:", expenseId);
       setIsDeletingExpense(true);
       
       try {
         // Optimistically update the UI first
-        const previousExpenses = queryClient.getQueryData<Expense[]>(['expenses']) || [];
+        const previousExpenses = queryClient.getQueryData<Expense[]>(['expenses', session?.user?.id]) || [];
         
-        queryClient.setQueryData(['expenses'], (oldExpenses: Expense[] = []) => {
+        queryClient.setQueryData(['expenses', session?.user?.id], (oldExpenses: Expense[] = []) => {
           console.log("Optimistically removing expense from cache");
           return oldExpenses.filter(expense => expense.id !== expenseId);
         });
@@ -125,7 +127,7 @@ export const useExpenseData = (session: Session | null) => {
         if (!result) {
           // If deletion failed, revert the optimistic update
           console.log("Delete operation failed, reverting optimistic update");
-          queryClient.setQueryData(['expenses'], previousExpenses);
+          queryClient.setQueryData(['expenses', session?.user?.id], previousExpenses);
           return false;
         }
         
@@ -144,7 +146,7 @@ export const useExpenseData = (session: Session | null) => {
         console.log("Successfully deleted expense");
         
         // Explicitly invalidate the expenses query to ensure fresh data
-        queryClient.invalidateQueries({ queryKey: ['expenses'] });
+        queryClient.invalidateQueries({ queryKey: ['expenses', session?.user?.id] });
         
         toast({
           title: "Expense Deleted",
@@ -169,13 +171,33 @@ export const useExpenseData = (session: Session | null) => {
     }
   });
 
+  // Add manual refresh function
+  const refreshData = () => {
+    if (session?.user) {
+      console.log("Manually refreshing expense data");
+      return refetchExpenses();
+    }
+    return Promise.resolve();
+  };
+
   return {
     expenses,
     isExpensesLoading,
+    expensesError,
     isLoading,
     isDeletingExpense,
+    refreshData,
     handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => {
       console.log("handleAddExpense called with:", { description, amount, paidBy, splits, groupId });
+      
+      if (!session?.user) {
+        toast({
+          title: "Authentication Required",
+          description: "You must be logged in to add expenses",
+          variant: "destructive"
+        });
+        return;
+      }
       
       // Make sure paidBy is a string
       const processedPaidBy = String(paidBy);
@@ -196,6 +218,16 @@ export const useExpenseData = (session: Session | null) => {
     },
     handleDeleteExpense: async (expenseId: string): Promise<boolean> => {
       console.log("handleDeleteExpense called with:", expenseId);
+      
+      if (!session?.user) {
+        toast({
+          title: "Authentication Required",
+          description: "You must be logged in to delete expenses",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       try {
         return await deleteExpenseMutation.mutateAsync(expenseId);
       } catch (error) {
@@ -205,6 +237,14 @@ export const useExpenseData = (session: Session | null) => {
     },
     // For backward compatibility
     addExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => {
+      if (!session?.user) {
+        toast({
+          title: "Authentication Required",
+          description: "You must be logged in to add expenses",
+          variant: "destructive"
+        });
+        return;
+      }
       return addExpenseMutation.mutate({ description, amount, paidBy, splits, groupId });
     }
   };

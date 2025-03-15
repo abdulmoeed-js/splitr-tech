@@ -10,10 +10,10 @@ export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
   useEffect(() => {
-    // Short timeout to ensure auth state is properly loaded
+    // Ensure auth state is properly loaded before making decisions
     const timer = setTimeout(() => {
       setIsCheckingAuth(false);
-    }, 500);
+    }, 1000); // Increased from 500ms to 1000ms to ensure auth is properly loaded
     
     return () => clearTimeout(timer);
   }, []);
@@ -21,19 +21,23 @@ export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   // Show loading state while we're checking authentication
   if (loading || isCheckingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading your information...</p>
       </div>
     );
   }
   
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    toast({
-      title: "Authentication Required",
-      description: "Please log in to view this page",
-      variant: "destructive",
-    });
+    // Only show the toast if we're not already on the login page
+    if (location.pathname !== '/login' && location.pathname !== '/signup') {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to view this page",
+        variant: "destructive",
+      });
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   

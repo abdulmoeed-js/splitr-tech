@@ -32,7 +32,12 @@ export const fetchExpenses = async (session: Session | null): Promise<Expense[]>
       throw error;
     }
     
-    console.log(`Fetched ${data?.length || 0} expenses from database`);
+    if (!data || data.length === 0) {
+      console.log("No expenses found for user");
+      return [];
+    }
+    
+    console.log(`Fetched ${data.length} expenses from database`);
     
     const mappedExpenses = data.map(exp => {
       // Safely convert UUID to friendId
@@ -79,7 +84,7 @@ export const fetchExpenses = async (session: Session | null): Promise<Expense[]>
     return mappedExpenses;
   } catch (error) {
     console.error("Error in fetchExpenses:", error);
-    return [];
+    throw error; // Throw error rather than returning empty array to trigger error state
   }
 };
 
