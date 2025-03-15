@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -16,10 +16,19 @@ export const SignInPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
   
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location]);
+  
   if (isAuthenticated) {
-    return <Navigate to="/" />;
+    return null; // Will be handled by the useEffect redirect
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -41,6 +50,7 @@ export const SignInPage = () => {
       
       navigate("/");
     } catch (error: any) {
+      console.error("Sign in error:", error);
       toast({
         variant: "destructive",
         title: "Sign in failed",

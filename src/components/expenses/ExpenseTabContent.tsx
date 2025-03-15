@@ -26,6 +26,7 @@ export const ExpenseTabContent = ({
 }: ExpenseTabContentProps) => {
   // Add state to track when an expense is being deleted
   const [isDeletingExpense, setIsDeletingExpense] = useState(false);
+  const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   
   // Handle expense deletion with loading state
   const handleDeleteExpense = async (expenseId: string): Promise<boolean> => {
@@ -36,6 +37,8 @@ export const ExpenseTabContent = ({
     
     console.log("Starting expense deletion process in ExpenseTabContent");
     setIsDeletingExpense(true);
+    setDeletingExpenseId(expenseId);
+    
     try {
       const result = await Promise.resolve(onDeleteExpense(expenseId));
       console.log("Delete operation completed with result:", result);
@@ -52,6 +55,7 @@ export const ExpenseTabContent = ({
       // Ensure we reset the loading state whether deletion succeeded or failed
       console.log("Resetting deleting state in ExpenseTabContent");
       setIsDeletingExpense(false);
+      setDeletingExpenseId(null);
     }
   };
   
@@ -70,6 +74,7 @@ export const ExpenseTabContent = ({
           friends={friends} 
           onDeleteExpense={onDeleteExpense ? handleDeleteExpense : undefined}
           isDeleting={isDeletingExpense}
+          deletingExpenseId={deletingExpenseId}
         />
       )}
     </div>

@@ -13,22 +13,34 @@ export const useAuth = () => {
   useEffect(() => {
     console.log("Setting up auth listeners");
     
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state changed:", event, "Session exists:", !!session);
-        setSession(session);
+    // Get initial session and set up auth state change listener
+    const fetchInitialSession = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log("Initial session fetch complete, user authenticated:", !!initialSession?.user);
+        setSession(initialSession);
+      } catch (error) {
+        console.error("Error fetching initial session:", error);
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session fetch complete, user authenticated:", !!session?.user);
-      setSession(session);
-      setLoading(false);
-    }).catch(error => {
-      console.error("Error fetching initial session:", error);
-      setLoading(false);
-    });
+    fetchInitialSession();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log("Auth state changed:", event, "Session exists:", !!currentSession);
+        setSession(currentSession);
+        
+        // Handle specific auth events
+        if (event === 'SIGNED_IN') {
+          console.log("User signed in successfully");
+        } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out successfully");
+        }
+      }
+    );
 
     return () => {
       console.log("Cleaning up auth listeners");
@@ -39,6 +51,7 @@ export const useAuth = () => {
   const handleSignOut = async () => {
     console.log("Sign out requested");
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Error signing out:", error);
@@ -59,6 +72,8 @@ export const useAuth = () => {
         title: "Error signing out",
         description: error.message || "An error occurred while signing out",
       });
+    } finally {
+      setLoading(false);
     }
   };
 

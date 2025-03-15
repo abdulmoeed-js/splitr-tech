@@ -20,7 +20,25 @@ export const deleteExpense = async (
   }
 
   try {
-    // First delete the splits
+    // First check if the expense exists and belongs to the user
+    const { data: expense, error: checkError } = await supabase
+      .from('expenses')
+      .select('id')
+      .eq('id', expenseId)
+      .eq('user_id', session.user.id)
+      .single();
+    
+    if (checkError || !expense) {
+      console.error("Error checking expense or expense not found:", checkError);
+      toast({
+        title: "Error",
+        description: "Expense not found or you don't have permission to delete it",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    // Then delete the splits
     console.log("Deleting expense splits for expense ID:", expenseId);
     const { error: splitError } = await supabase
       .from('expense_splits')
@@ -40,12 +58,11 @@ export const deleteExpense = async (
     console.log("Successfully deleted splits for expense ID:", expenseId);
     
     // Then delete the expense
-    console.log("Deleting expense with ID:", expenseId, "for user:", session.user.id);
+    console.log("Deleting expense with ID:", expenseId);
     const { error: expenseError } = await supabase
       .from('expenses')
       .delete()
-      .eq('id', expenseId)
-      .eq('user_id', session.user.id);
+      .eq('id', expenseId);
     
     if (expenseError) {
       console.error("Error deleting expense:", expenseError);
