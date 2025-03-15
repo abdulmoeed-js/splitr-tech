@@ -23,8 +23,14 @@ export const createDatabaseExpense = async (
   }
 
   try {
-    const convertedPaidBy = friendIdToUuid(paidBy);
-    console.log("Converted paidBy to UUID format:", { original: paidBy, converted: convertedPaidBy });
+    let convertedPaidBy;
+    try {
+      convertedPaidBy = friendIdToUuid(paidBy);
+      console.log("Converted paidBy to UUID format:", { original: paidBy, converted: convertedPaidBy });
+    } catch (error) {
+      console.warn(`Could not convert paidBy (${paidBy}) to UUID, using as is`, error);
+      convertedPaidBy = paidBy;
+    }
     
     // For authenticated users
     console.log("Inserting expense into database");
@@ -49,12 +55,18 @@ export const createDatabaseExpense = async (
     
     // Process splits for database
     const processedSplits = splits.map(split => {
-      const convertedFriendId = friendIdToUuid(split.friendId);
-      console.log("Converting split friendId:", { 
-        original: split.friendId, 
-        converted: convertedFriendId, 
-        amount: split.amount 
-      });
+      let convertedFriendId;
+      try {
+        convertedFriendId = friendIdToUuid(split.friendId);
+        console.log("Converting split friendId:", { 
+          original: split.friendId, 
+          converted: convertedFriendId, 
+          amount: split.amount 
+        });
+      } catch (error) {
+        console.warn(`Could not convert split friendId (${split.friendId}) to UUID, using as is`, error);
+        convertedFriendId = split.friendId;
+      }
       
       return {
         expense_id: expenseData.id,

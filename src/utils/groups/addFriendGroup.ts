@@ -40,8 +40,21 @@ export const addFriendGroup = async (
       throw groupError;
     }
     
+    // Make sure all memberIds are valid before proceeding
+    const validMemberIds = memberIds.filter(id => {
+      const exists = friends.some(friend => friend.id === id);
+      if (!exists) {
+        console.warn(`Friend with ID ${id} not found in friends list, skipping`);
+      }
+      return exists;
+    });
+    
+    if (validMemberIds.length === 0) {
+      throw new Error("No valid members selected for the group");
+    }
+    
     // Prepare group members data
-    const groupMembers = memberIds.map(memberId => ({
+    const groupMembers = validMemberIds.map(memberId => ({
       group_id: groupData.id,
       friend_id: memberId
     }));
@@ -61,7 +74,7 @@ export const addFriendGroup = async (
       id: groupData.id,
       name: groupData.name,
       createdAt: new Date(groupData.created_at),
-      members: friends.filter(friend => memberIds.includes(friend.id))
+      members: friends.filter(friend => validMemberIds.includes(friend.id))
     };
     
     console.log("Successfully created friend group:", group);

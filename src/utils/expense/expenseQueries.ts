@@ -58,17 +58,32 @@ export const fetchExpenses = async (session: Session | null): Promise<Expense[]>
     }
     
     console.log(`Fetched ${data?.length || 0} expenses from database`);
-    console.log("Raw expense data:", data);
     
     const mappedExpenses = data.map(exp => {
-      const paidBy = uuidToFriendId(exp.paid_by);
+      // Safely convert UUID to friendId
+      let paidBy;
+      try {
+        paidBy = uuidToFriendId(exp.paid_by);
+      } catch (error) {
+        console.warn(`Error converting paid_by UUID to friendId: ${exp.paid_by}`, error);
+        paidBy = exp.paid_by; // Fallback to using the UUID directly
+      }
+      
       console.log(`Mapping expense ${exp.id}: amount=${exp.amount}, paidBy=${paidBy}`);
       
-      const mappedSplits = exp.expense_splits.map((split: any) => {
-        const friendId = uuidToFriendId(split.friend_id);
+      const mappedSplits = (exp.expense_splits || []).map((split: any) => {
+        let friendId;
+        try {
+          friendId = uuidToFriendId(split.friend_id);
+        } catch (error) {
+          console.warn(`Error converting split friend_id UUID to friendId: ${split.friend_id}`, error);
+          friendId = split.friend_id; // Fallback to using the UUID directly
+        }
+        
         console.log(`- Split: friendId=${friendId}, amount=${split.amount}`);
+        
         return {
-          friendId: friendId,
+          friendId,
           amount: Number(split.amount),
           percentage: split.percentage ? Number(split.percentage) : undefined
         };
@@ -78,7 +93,7 @@ export const fetchExpenses = async (session: Session | null): Promise<Expense[]>
         id: exp.id,
         description: exp.description,
         amount: Number(exp.amount),
-        paidBy: paidBy,
+        paidBy,
         date: new Date(exp.date),
         groupId: exp.group_id || undefined,
         splits: mappedSplits

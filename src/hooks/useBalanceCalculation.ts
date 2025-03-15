@@ -2,49 +2,61 @@
 import { Friend, Expense, SettlementPayment } from "@/types/expense";
 
 export const useBalanceCalculation = () => {
-  const calculateBalances = (expenses: Expense[], friends: Friend[]) => {
-    // Calculate what each person owes to others
-    const balances: Record<string, Record<string, number>> = {};
+  // Calculate balances based on expenses and payments
+  const calculateBalances = (expenses: Expense[], friends: Friend[], payments: SettlementPayment[] = []) => {
+    // Create a map to store balances for each friend
+    const balances: Record<string, number> = {};
     
-    // Initialize balances
-    friends.forEach(f1 => {
-      balances[f1.id] = {};
-      friends.forEach(f2 => {
-        if (f1.id !== f2.id) {
-          balances[f1.id][f2.id] = 0;
-        }
-      });
+    // Initialize balances for all friends
+    friends.forEach(friend => {
+      balances[friend.id] = 0;
     });
-    
-    // Process expenses
+
+    // Calculate expenses first
     expenses.forEach(expense => {
-      const payer = expense.paidBy;
+      const paidBy = expense.paidBy;
       
+      // Skip expenses with invalid or missing paidBy
+      if (!paidBy || !balances[paidBy]) {
+        console.log(`Skipping expense with invalid payer: ${expense.id}, paidBy: ${paidBy}`);
+        return;
+      }
+      
+      // Add the full amount to the payer's balance
+      balances[paidBy] += expense.amount;
+      
+      // Process each split
       expense.splits.forEach(split => {
-        const debtor = split.friendId;
-        
-        if (payer !== debtor) {
-          // Debtor owes payer
-          balances[debtor][payer] = (balances[debtor][payer] || 0) + split.amount;
-          
-          // Payer is owed by debtor (negative entry)
-          balances[payer][debtor] = (balances[payer][debtor] || 0) - split.amount;
+        // Skip invalid split friendIds
+        if (!split.friendId || !balances[split.friendId]) {
+          console.log(`Skipping invalid split for expense: ${expense.id}, friendId: ${split.friendId}`);
+          return;
         }
+        
+        // Subtract the split amount from each friend's balance
+        balances[split.friendId] -= split.amount;
       });
     });
     
-    // Simplify balances (remove zero or negative amounts)
-    Object.keys(balances).forEach(fromId => {
-      Object.keys(balances[fromId]).forEach(toId => {
-        if (balances[fromId][toId] <= 0) {
-          balances[fromId][toId] = 0;
-        }
-      });
+    // Apply payments
+    payments.forEach(payment => {
+      const { fromFriendId, toFriendId, amount } = payment;
+      
+      // Skip payments with invalid friend IDs
+      if (!fromFriendId || !toFriendId || !balances[fromFriendId] || !balances[toFriendId]) {
+        console.log(`Skipping payment with invalid friend IDs: ${payment.id}`);
+        return;
+      }
+      
+      // Adjust balances based on the payment
+      balances[fromFriendId] -= amount;
+      balances[toFriendId] += amount;
     });
     
     return balances;
   };
 
+  // Filter expenses based on group
   const getFilteredExpenses = (expenses: Expense[], selectedGroupId: string | null) => {
     if (!selectedGroupId) return expenses;
     return expenses.filter(expense => expense.groupId === selectedGroupId);

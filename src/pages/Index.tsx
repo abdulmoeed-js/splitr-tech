@@ -31,12 +31,24 @@ export default function Home() {
 
   // Filter expenses and friends based on selected group
   const filteredExpenses = getFilteredExpenses(expenses, selectedGroupId);
+  
+  // Make sure that we only use friends that exist in our data
+  const friendsMap = new Map(friends.map(f => [f.id, f]));
+  
+  // Filter out expenses with invalid payers or splits
+  const validExpenses = filteredExpenses.filter(expense => {
+    const hasPayer = friends.some(f => f.id === expense.paidBy);
+    const validSplits = expense.splits.filter(split => 
+      friends.some(f => f.id === split.friendId)
+    );
+    
+    // Only include expenses with a valid payer and at least one valid split
+    return hasPayer && validSplits.length > 0;
+  });
+  
   const filteredFriends = selectedGroupId
     ? groups.find(g => g.id === selectedGroupId)?.members || []
     : friends;
-
-  // Calculate balances for the current view
-  const balances = calculateBalances(filteredExpenses, filteredFriends);
 
   // Handle adding a new expense
   const handleAddNewExpense = (description: string, amount: number, paidBy: string, splits: any[]) => {
@@ -68,7 +80,7 @@ export default function Home() {
   
   // This will be used for the ExpenseDashboard component
   const dashboardProps = {
-    filteredExpenses,
+    filteredExpenses: validExpenses,
     friends,
     filteredFriends,
     payments,
@@ -88,7 +100,7 @@ export default function Home() {
         <div className="space-y-6">
           {/* Balance summary without passing balances directly */}
           <BalanceSummary
-            expenses={filteredExpenses}
+            expenses={validExpenses}
             friends={filteredFriends}
             payments={payments}
           />
@@ -116,7 +128,7 @@ export default function Home() {
 
             <TabsContent value="expenses" className="mt-4">
               <ExpenseTabContent
-                expenses={filteredExpenses}
+                expenses={validExpenses}
                 friends={filteredFriends}
                 reminders={reminders}
                 onMarkReminderAsRead={handleMarkReminderAsRead}
