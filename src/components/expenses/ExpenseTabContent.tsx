@@ -3,6 +3,7 @@ import { Expense, Friend, PaymentReminder } from "@/types/expense";
 import { ExpenseList } from "@/components/ExpenseList";
 import { SettlementPayment } from "@/types/expense";
 import { useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 
 interface ExpenseTabContentProps {
   expenses: Expense[];
@@ -11,7 +12,7 @@ interface ExpenseTabContentProps {
   onMarkReminderAsRead?: (reminderId: string) => void;
   onSettleReminder?: (reminder: PaymentReminder) => void;
   payments?: SettlementPayment[];
-  onDeleteExpense?: (expenseId: string) => void;
+  onDeleteExpense?: (expenseId: string) => Promise<boolean> | void;
 }
 
 export const ExpenseTabContent = ({ 
@@ -27,12 +28,21 @@ export const ExpenseTabContent = ({
   const [isDeletingExpense, setIsDeletingExpense] = useState(false);
   
   // Handle expense deletion with loading state
-  const handleDeleteExpense = (expenseId: string) => {
-    if (!onDeleteExpense) return;
+  const handleDeleteExpense = async (expenseId: string): Promise<boolean> => {
+    if (!onDeleteExpense) return false;
     
     setIsDeletingExpense(true);
     try {
-      onDeleteExpense(expenseId);
+      const result = await Promise.resolve(onDeleteExpense(expenseId));
+      return result === false ? false : true;
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete expense",
+        variant: "destructive"
+      });
+      return false;
     } finally {
       // Ensure we reset the loading state whether deletion succeeded or failed
       setIsDeletingExpense(false);

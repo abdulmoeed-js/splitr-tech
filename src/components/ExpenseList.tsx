@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { Receipt, User, Users, Trash2, Loader2 } from "lucide-react";
 import { Expense, Friend, FriendGroup } from "@/types/expense";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -22,7 +23,7 @@ interface ExpenseListProps {
   expenses: Expense[];
   friends: Friend[];
   groups?: FriendGroup[];
-  onDeleteExpense?: (expenseId: string) => void;
+  onDeleteExpense?: (expenseId: string) => Promise<boolean> | void;
   isDeleting?: boolean;
 }
 
@@ -35,6 +36,7 @@ export const ExpenseList = ({
 }: ExpenseListProps) => {
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [localIsDeleting, setLocalIsDeleting] = useState(false);
   
   if (!Array.isArray(expenses) || expenses.length === 0) {
     return (
@@ -57,11 +59,31 @@ export const ExpenseList = ({
     return `Rs. ${parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}`;
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (expenseToDelete && onDeleteExpense) {
-      onDeleteExpense(expenseToDelete);
-      setExpenseToDelete(null);
-      setIsDeleteDialogOpen(false);
+      try {
+        setLocalIsDeleting(true);
+        const result = await onDeleteExpense(expenseToDelete);
+        
+        if (result === false) {
+          toast({
+            title: "Error",
+            description: "Failed to delete expense. Please try again.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Error in handleDelete:", error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred while deleting the expense.",
+          variant: "destructive"
+        });
+      } finally {
+        setLocalIsDeleting(false);
+        setExpenseToDelete(null);
+        setIsDeleteDialogOpen(false);
+      }
     }
   };
 
@@ -69,6 +91,9 @@ export const ExpenseList = ({
     setExpenseToDelete(expenseId);
     setIsDeleteDialogOpen(true);
   };
+
+  // Determine if we're currently deleting
+  const isDeletingExpense = isDeleting || localIsDeleting;
 
   return (
     <div className="space-y-4">
@@ -79,6 +104,8 @@ export const ExpenseList = ({
         
         // Find the group if it exists
         const group = expense.groupId ? validGroups.find(g => g.id === expense.groupId) : null;
+        
+        const isCurrentlyDeleting = isDeletingExpense && expenseToDelete === expense.id;
         
         return (
           <Card key={expense.id} className="p-4 hover:shadow-md transition-shadow slide-up glass-panel">
@@ -120,9 +147,9 @@ export const ExpenseList = ({
                     size="icon" 
                     className="mt-2 text-muted-foreground hover:text-destructive"
                     onClick={() => openDeleteDialog(expense.id)}
-                    disabled={isDeleting}
+                    disabled={isDeletingExpense}
                   >
-                    {isDeleting && expenseToDelete === expense.id ? (
+                    {isCurrentlyDeleting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Trash2 className="h-4 w-4" />
@@ -144,15 +171,18 @@ export const ExpenseList = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setExpenseToDelete(null)}>
+            <AlertDialogCancel 
+              onClick={() => setExpenseToDelete(null)}
+              disabled={isDeletingExpense}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDelete} 
               className="bg-destructive"
-              disabled={isDeleting}
+              disabled={isDeletingExpense}
             >
-              {isDeleting ? (
+              {isDeletingExpense ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
