@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Friend } from "@/types/expense";
 import { Session } from "@supabase/supabase-js";
@@ -11,24 +10,58 @@ export const fetchFriends = async (session: Session | null, userName: string) =>
   }
 
   try {
-    // First, ensure the user has a "You" entry
-    const userFriendExists = await supabase
+    // First, check if the "You" entry exists
+    const { data: existingYouFriend, error: checkError } = await supabase
       .from('friends')
       .select('*')
       .eq('user_id', session.user.id)
       .eq('name', userName)
-      .single();
+      .limit(1);
     
-    if (userFriendExists.error && userFriendExists.error.code === 'PGRST116') {
-      // "You" friend doesn't exist, create it
+    if (checkError) {
+      console.error("Error checking for You friend:", checkError);
+      throw checkError;
+    }
+    
+    // If "You" friend doesn't exist or there are multiple entries, clean up and create a new one
+    if (!existingYouFriend || existingYouFriend.length === 0) {
       console.log(`Creating "You" friend entry for user ${session.user.id} with name ${userName}`);
-      await supabase
+      
+      // Create the "You" friend
+      const { data: newYouFriend, error: insertError } = await supabase
         .from('friends')
         .insert({
           user_id: session.user.id,
           name: userName,
           is_complete: true
-        });
+        })
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error("Error creating You friend:", insertError);
+        throw insertError;
+      }
+    }
+    else if (existingYouFriend.length > 1) {
+      // This should not happen due to the LIMIT 1, but let's leave this check for safety
+      console.log("Multiple 'You' entries found, cleaning up duplicates");
+      
+      // Keep the first one and delete the rest
+      const firstYouFriendId = existingYouFriend[0].id;
+      
+      // Delete all other "You" entries
+      const { error: deleteError } = await supabase
+        .from('friends')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('name', userName)
+        .neq('id', firstYouFriendId);
+      
+      if (deleteError) {
+        console.error("Error deleting duplicate You friends:", deleteError);
+        throw deleteError;
+      }
     }
 
     // Now fetch all friends

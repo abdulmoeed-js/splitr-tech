@@ -2,14 +2,25 @@
 import { useQuery } from "@tanstack/react-query";
 import { Session } from "@supabase/supabase-js";
 import { Friend } from "@/types/expense";
-import { fetchFriends } from "@/utils/friends";
+import { fetchFriends, cleanupDuplicateYouFriends } from "@/utils/friends";
 import { useAddFriend } from "@/hooks/friends/useAddFriend";
 import { useUpdateFriend } from "@/hooks/friends/useUpdateFriend";
 import { useInviteFriend } from "@/hooks/friends/useInviteFriend";
 import { useRemoveFriend } from "@/hooks/friends/useRemoveFriend";
 import { toast } from "@/components/ui/use-toast";
+import { useEffect } from "react";
 
 export const useFriends = (session: Session | null, userName: string) => {
+  // Clean up duplicate "You" entries when the hook is initialized
+  useEffect(() => {
+    if (session?.user) {
+      console.log("Running cleanup of duplicate 'You' friends");
+      cleanupDuplicateYouFriends(session, userName).catch(error => {
+        console.error("Error during cleanup:", error);
+      });
+    }
+  }, [session?.user?.id, userName]);
+
   // Fetch friends from Supabase
   const { 
     data: friends = [], 
@@ -36,11 +47,19 @@ export const useFriends = (session: Session | null, userName: string) => {
     }
   });
 
-  // Manual refresh function
-  const refreshData = () => {
+  // Manual refresh function with cleanup included
+  const refreshData = async () => {
     if (session?.user) {
       console.log("Manually refreshing friends data");
-      return refetchFriends();
+      try {
+        // First clean up any duplicates
+        await cleanupDuplicateYouFriends(session, userName);
+        // Then refetch the friends list
+        return refetchFriends();
+      } catch (error) {
+        console.error("Error during friends refresh:", error);
+        throw error;
+      }
     }
     return Promise.resolve();
   };
