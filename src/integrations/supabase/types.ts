@@ -199,6 +199,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_provider_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          provider: string
+          settings: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          provider: string
+          settings?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          provider?: string
+          settings?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_reminders: {
         Row: {
           amount: number
@@ -244,8 +274,11 @@ export type Database = {
           id: string
           method: string
           payment_method_id: string | null
+          payment_status: string | null
+          paypal_payment_id: string | null
           receipt_url: string | null
           status: string
+          stripe_payment_id: string | null
           to_friend_id: string
           user_id: string
         }
@@ -257,8 +290,11 @@ export type Database = {
           id?: string
           method: string
           payment_method_id?: string | null
+          payment_status?: string | null
+          paypal_payment_id?: string | null
           receipt_url?: string | null
           status: string
+          stripe_payment_id?: string | null
           to_friend_id: string
           user_id: string
         }
@@ -270,8 +306,11 @@ export type Database = {
           id?: string
           method?: string
           payment_method_id?: string | null
+          payment_status?: string | null
+          paypal_payment_id?: string | null
           receipt_url?: string | null
           status?: string
+          stripe_payment_id?: string | null
           to_friend_id?: string
           user_id?: string
         }

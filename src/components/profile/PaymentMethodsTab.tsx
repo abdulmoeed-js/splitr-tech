@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { PaymentMethodsList } from "@/components/profile/PaymentMethodsList";
 import { Button } from "@/components/ui/button";
-import { Plus, CreditCard } from "lucide-react";
+import { Plus, CreditCard, CreditCard as StripeIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,17 +12,25 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { AddPaymentMethodForm } from "@/components/profile/AddPaymentMethodForm";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PayPalIcon } from "@/components/ui/icons";
+import { usePaymentProviders } from "@/hooks/usePaymentProviders";
 
 export const PaymentMethodsTab = () => {
   const { paymentMethods, loading, preferredPaymentMethodId, removePaymentMethod, setPreferredMethod, addPaymentMethod } = usePaymentMethods();
   const { user } = useAuth();
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [currency, setCurrency] = useState("USD");
+  const { 
+    providers,
+    isLoading: isProvidersLoading,
+    toggleProviderEnabled
+  } = usePaymentProviders();
   
   useEffect(() => {
     const fetchCurrency = async () => {
@@ -108,6 +116,50 @@ export const PaymentMethodsTab = () => {
             <Label htmlFor="pkr">Pakistani Rupee (PKR)</Label>
           </div>
         </RadioGroup>
+      </div>
+      
+      {/* Payment Providers */}
+      <div className="bg-accent/10 rounded-xl p-4">
+        <h3 className="font-medium mb-3">Payment Providers</h3>
+        <p className="text-sm text-primary/70 mb-4">
+          Enable or disable payment providers for settlements
+        </p>
+        
+        {isProvidersLoading ? (
+          <div className="flex justify-center py-2">
+            <div className="animate-spin h-6 w-6 border-2 border-primary/20 border-t-primary rounded-full"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <StripeIcon className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">Stripe</p>
+                  <p className="text-xs text-primary/70">Accept credit/debit card payments</p>
+                </div>
+              </div>
+              <Switch 
+                checked={providers.find(p => p.provider === 'stripe')?.isEnabled || false}
+                onCheckedChange={(checked) => toggleProviderEnabled('stripe', checked)}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <PayPalIcon className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">PayPal</p>
+                  <p className="text-xs text-primary/70">Accept PayPal payments</p>
+                </div>
+              </div>
+              <Switch 
+                checked={providers.find(p => p.provider === 'paypal')?.isEnabled || false}
+                onCheckedChange={(checked) => toggleProviderEnabled('paypal', checked)}
+              />
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Payment Methods List */}

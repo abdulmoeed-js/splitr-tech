@@ -9,6 +9,7 @@ import { SettlementAmount } from "./dialog/SettlementAmount";
 import { PaymentMethodSelector } from "./dialog/PaymentMethodSelector";
 import { PaymentMethodOptions } from "./dialog/PaymentMethodOptions";
 import { useSettlementDialog } from "./dialog/useSettlementDialog";
+import { Loader2 } from "lucide-react";
 
 interface SettlementDialogProps {
   fromFriend: Friend;
@@ -42,6 +43,7 @@ export const SettlementDialog = ({
     setSelectedPaymentMethodId,
     settlementAmount,
     setSettlementAmount,
+    isProcessing,
     handleSubmit
   } = useSettlementDialog(fromFriend, toFriend, amount, onSettleDebt, setOpen);
 
@@ -109,9 +111,24 @@ export const SettlementDialog = ({
             />
           )}
           
-          <Button type="submit" className="w-full">
-            Pay Rs. {parseFloat(settlementAmount).toLocaleString('en-PK')}
+          <Button type="submit" className="w-full" disabled={isProcessing}>
+            {isProcessing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                Pay Rs. {parseFloat(settlementAmount).toLocaleString('en-PK')}
+              </>
+            )}
           </Button>
+          
+          {(paymentMethod === 'stripe' || paymentMethod === 'paypal') && (
+            <p className="text-xs text-muted-foreground text-center">
+              You will be redirected to a secure payment page.
+            </p>
+          )}
         </form>
       </DialogContent>
     </Dialog>

@@ -2,9 +2,10 @@
 import { Dispatch, SetStateAction } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Wallet, Building, Smartphone } from "lucide-react";
+import { CreditCard, Wallet, Building, Smartphone, CreditCard as StripeIcon } from "lucide-react";
+import { PayPalIcon } from "@/components/ui/icons";
 
-type PaymentMethodType = "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank";
+type PaymentMethodType = "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank" | "stripe" | "paypal";
 
 interface PaymentMethodSelectorProps {
   paymentMethod: PaymentMethodType;
@@ -65,6 +66,18 @@ export const PaymentMethodSelector = ({
             <div className="flex items-center gap-2">
               <Building className="h-4 w-4" />
               <span>Bank Account</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="stripe">
+            <div className="flex items-center gap-2">
+              <StripeIcon className="h-4 w-4" />
+              <span>Stripe</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="paypal">
+            <div className="flex items-center gap-2">
+              <PayPalIcon className="h-4 w-4" />
+              <span>PayPal</span>
             </div>
           </SelectItem>
         </SelectContent>
