@@ -7,6 +7,7 @@ export type NewReminderData = {
   toFriendId: string;
   amount: number;
   dueDate: Date;
+  message?: string;
 };
 
 export const createReminder = async (
@@ -24,7 +25,8 @@ export const createReminder = async (
       dueDate: newReminder.dueDate,
       createdAt: currentDate,
       isRead: false,
-      isPaid: false
+      isPaid: false,
+      ...(newReminder.message && { message: newReminder.message })
     };
   }
 
@@ -38,7 +40,8 @@ export const createReminder = async (
       due_date: newReminder.dueDate.toISOString(),
       created_at: currentDate.toISOString(),
       is_read: false,
-      is_paid: false
+      is_paid: false,
+      ...(newReminder.message && { message: newReminder.message })
     })
     .select()
     .single();

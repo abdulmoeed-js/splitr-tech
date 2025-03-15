@@ -238,6 +238,7 @@ export type Database = {
           id: string
           is_paid: boolean
           is_read: boolean
+          message: string | null
           to_friend_id: string
           user_id: string
         }
@@ -249,6 +250,7 @@ export type Database = {
           id?: string
           is_paid?: boolean
           is_read?: boolean
+          message?: string | null
           to_friend_id: string
           user_id: string
         }
@@ -260,6 +262,7 @@ export type Database = {
           id?: string
           is_paid?: boolean
           is_read?: boolean
+          message?: string | null
           to_friend_id?: string
           user_id?: string
         }
