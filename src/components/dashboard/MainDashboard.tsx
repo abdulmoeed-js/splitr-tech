@@ -1,12 +1,9 @@
 
-import { useState } from "react";
 import { Friend, Expense, PaymentReminder, SettlementPayment } from "@/types/expense";
-import { BalanceSummary } from "@/components/BalanceSummary";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExpenseDashboard } from "@/components/expenses/ExpenseDashboard";
-import { ExpenseTabContent } from "@/components/expenses/ExpenseTabContent";
-import { AddExpenseDialog } from "@/components/expenses/dialog/AddExpenseDialog";
-import { SettlementDialog } from "@/components/settlements/SettlementDialog";
+import { DashboardBalanceSummary } from "@/components/dashboard/DashboardBalanceSummary";
+import { DashboardTabs } from "@/components/dashboard/DashboardTabs";
+import { SettlementDialogWrapper } from "@/components/dashboard/SettlementDialogWrapper";
+import { useSettlementDialogState } from "@/hooks/useSettlementDialogState";
 
 interface MainDashboardProps {
   validExpenses: Expense[];
@@ -35,94 +32,49 @@ export function MainDashboard({
   onSettleReminder,
   onDeleteExpense
 }: MainDashboardProps) {
-  const [isSettlementOpen, setIsSettlementOpen] = useState(false);
-  const [selectedReminder, setSelectedReminder] = useState<PaymentReminder | null>(null);
-
-  // Handle settling up
-  const openSettlementDialog = (reminder: PaymentReminder) => {
-    setSelectedReminder(reminder);
-    setIsSettlementOpen(true);
-  };
-
-  const handleSettleUp = (payment: SettlementPayment) => {
-    if (selectedReminder) {
-      onSettleReminder(selectedReminder);
-    }
-    onSettleDebt(payment);
-    setIsSettlementOpen(false);
-    setSelectedReminder(null);
-  };
-
-  // This will be used for the ExpenseDashboard component
-  const dashboardProps = {
-    filteredExpenses: validExpenses,
-    friends,
-    filteredFriends,
-    payments,
-    reminders,
-    paymentMethods: [],
-    hasUnreadReminders,
-    onSettleDebt,
-    onMarkReminderAsRead,
-    onSettleReminder: openSettlementDialog,
-    onDeleteExpense
-  };
+  // Use our custom hook to manage settlement dialog state
+  const {
+    isSettlementOpen,
+    setIsSettlementOpen,
+    selectedReminder,
+    setSelectedReminder,
+    openSettlementDialog
+  } = useSettlementDialogState();
 
   return (
     <>
-      {/* Balance summary without passing balances directly */}
-      <BalanceSummary
+      {/* Balance summary and add expense button */}
+      <DashboardBalanceSummary
         expenses={validExpenses}
-        friends={filteredFriends}
+        filteredFriends={filteredFriends}
         payments={payments}
+        onAddExpense={onAddExpense}
       />
 
-      {/* Add Expense Button */}
-      <div className="flex justify-end">
-        <AddExpenseDialog
-          onAddExpense={onAddExpense}
-          friends={filteredFriends}
-        />
-      </div>
-
       {/* Main content tabs */}
-      <Tabs defaultValue="dashboard" className="mt-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="dashboard" className="mt-4">
-          <ExpenseDashboard 
-            {...dashboardProps}
-          />
-        </TabsContent>
-
-        <TabsContent value="expenses" className="mt-4">
-          <ExpenseTabContent
-            expenses={validExpenses}
-            friends={filteredFriends}
-            reminders={reminders}
-            onMarkReminderAsRead={onMarkReminderAsRead}
-            onSettleReminder={openSettlementDialog}
-            payments={payments}
-            onDeleteExpense={onDeleteExpense}
-          />
-        </TabsContent>
-      </Tabs>
+      <DashboardTabs
+        expenses={validExpenses}
+        friends={friends}
+        filteredFriends={filteredFriends}
+        payments={payments}
+        reminders={reminders}
+        hasUnreadReminders={hasUnreadReminders}
+        onSettleDebt={onSettleDebt}
+        onMarkReminderAsRead={onMarkReminderAsRead}
+        onSettleReminder={openSettlementDialog}
+        onDeleteExpense={onDeleteExpense}
+      />
 
       {/* Settlement Dialog */}
-      {selectedReminder && (
-        <SettlementDialog
-          fromFriend={{id: "1", name: "You"}}
-          toFriend={selectedReminder?.toFriendId ? friends.find(f => f.id === selectedReminder.toFriendId) || {id: "unknown", name: "Unknown"} : {id: "unknown", name: "Unknown"}}
-          amount={selectedReminder?.amount || 0}
-          paymentMethods={[]}
-          onSettleDebt={handleSettleUp}
-          isOpen={isSettlementOpen}
-          onOpenChange={setIsSettlementOpen}
-        />
-      )}
+      <SettlementDialogWrapper
+        friends={friends}
+        selectedReminder={selectedReminder}
+        onSettleReminder={onSettleReminder}
+        onSettleDebt={onSettleDebt}
+        isSettlementOpen={isSettlementOpen}
+        setIsSettlementOpen={setIsSettlementOpen}
+        setSelectedReminder={setSelectedReminder}
+      />
     </>
   );
 }
