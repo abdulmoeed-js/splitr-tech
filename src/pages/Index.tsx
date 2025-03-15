@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useSession } from "@/hooks/useSession";
@@ -20,7 +19,8 @@ import { toast } from "@/components/ui/use-toast";
 export default function Home() {
   const { session, userName } = useSession();
   const { 
-    expenses, isExpensesLoading, refreshData: refreshExpenses 
+    expenses, isExpensesLoading, refreshData: refreshExpenses, 
+    handleAddExpense, handleDeleteExpense 
   } = useExpenses();
   
   const { 
