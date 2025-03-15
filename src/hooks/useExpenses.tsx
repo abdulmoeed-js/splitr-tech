@@ -9,6 +9,7 @@ interface ExpensesContextType {
   expenses: Expense[];
   isExpensesLoading: boolean;
   handleAddExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => void;
+  handleDeleteExpense: (expenseId: string) => void;
   // Add friends-related properties
   isLoaded: boolean;
   friends: Friend[];
@@ -25,7 +26,8 @@ export const ExpensesProvider: React.FC<{ children: ReactNode }> = ({ children }
   const { 
     expenses, 
     isExpensesLoading,
-    handleAddExpense
+    handleAddExpense,
+    handleDeleteExpense
   } = useExpenseData(session);
 
   const {
@@ -44,6 +46,7 @@ export const ExpensesProvider: React.FC<{ children: ReactNode }> = ({ children }
     expenses,
     isExpensesLoading,
     handleAddExpense,
+    handleDeleteExpense,
     // Add friends-related properties
     isLoaded,
     friends,

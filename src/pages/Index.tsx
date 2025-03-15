@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useSession } from "@/hooks/useSession";
@@ -16,7 +17,7 @@ import { SettlementDialog } from "@/components/settlements/SettlementDialog";
 
 export default function Home() {
   const { session, userName } = useSession();
-  const { expenses, handleAddExpense } = useExpenses();
+  const { expenses, handleAddExpense, handleDeleteExpense } = useExpenses();
   const { friends, handleAddFriend, handleInviteFriend } = useFriends(session, userName);
   const { groups, addGroup } = useGroups(session, friends);
   const { payments, settleDebt } = usePayments(session);
@@ -76,7 +77,8 @@ export default function Home() {
     hasUnreadReminders,
     onSettleDebt: settleDebt,
     onMarkReminderAsRead: handleMarkReminderAsRead,
-    onSettleReminder: openSettlementDialog
+    onSettleReminder: openSettlementDialog,
+    onDeleteExpense: handleDeleteExpense
   };
 
   return (
@@ -120,6 +122,7 @@ export default function Home() {
                 onMarkReminderAsRead={handleMarkReminderAsRead}
                 onSettleReminder={openSettlementDialog}
                 payments={payments}
+                onDeleteExpense={handleDeleteExpense}
               />
             </TabsContent>
           </Tabs>

@@ -2,16 +2,32 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Receipt, User, Users } from "lucide-react";
+import { Receipt, User, Users, Trash2 } from "lucide-react";
 import { Expense, Friend, FriendGroup } from "@/types/expense";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface ExpenseListProps {
   expenses: Expense[];
   friends: Friend[];
   groups?: FriendGroup[];
+  onDeleteExpense?: (expenseId: string) => void;
 }
 
-export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps) => {
+export const ExpenseList = ({ expenses, friends, groups = [], onDeleteExpense }: ExpenseListProps) => {
+  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  
   if (!Array.isArray(expenses) || expenses.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-6">
@@ -31,6 +47,13 @@ export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps
 
   const formatCurrency = (amount: number) => {
     return `Rs. ${parseFloat(amount.toFixed(2)).toLocaleString('en-PK')}`;
+  };
+
+  const handleDelete = () => {
+    if (expenseToDelete && onDeleteExpense) {
+      onDeleteExpense(expenseToDelete);
+      setExpenseToDelete(null);
+    }
   };
 
   return (
@@ -66,7 +89,7 @@ export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps
                   )}
                 </div>
               </div>
-              <div className="text-right">
+              <div className="flex flex-col items-end">
                 <p className="text-lg font-bold text-primary">{formatCurrency(expense.amount)}</p>
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
                   <User className="w-3 h-3 mr-1" />
@@ -77,6 +100,36 @@ export const ExpenseList = ({ expenses, friends, groups = [] }: ExpenseListProps
                 <div className="text-xs text-muted-foreground mt-1">
                   Split among {expense.splits?.length || 0} {expense.splits?.length === 1 ? 'person' : 'people'}
                 </div>
+                {onDeleteExpense && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="mt-2 text-muted-foreground hover:text-destructive"
+                        onClick={() => setExpenseToDelete(expense.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this expense? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setExpenseToDelete(null)}>
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </div>
           </Card>

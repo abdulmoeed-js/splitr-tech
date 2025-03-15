@@ -17,6 +17,7 @@ interface ExpenseDashboardProps {
   onSettleDebt: (payment: SettlementPayment) => void;
   onMarkReminderAsRead: (reminderId: string) => void;
   onSettleReminder: (reminder: PaymentReminder) => void;
+  onDeleteExpense?: (expenseId: string) => void;
 }
 
 export const ExpenseDashboard = ({
@@ -29,7 +30,8 @@ export const ExpenseDashboard = ({
   hasUnreadReminders,
   onSettleDebt,
   onMarkReminderAsRead,
-  onSettleReminder
+  onSettleReminder,
+  onDeleteExpense
 }: ExpenseDashboardProps) => {
   return (
     <Tabs defaultValue="expenses" className="space-y-8">
@@ -45,7 +47,11 @@ export const ExpenseDashboard = ({
       </TabsList>
 
       <TabsContent value="expenses" className="space-y-4">
-        <ExpenseTabContent expenses={filteredExpenses} friends={friends} />
+        <ExpenseTabContent 
+          expenses={filteredExpenses} 
+          friends={friends}
+          onDeleteExpense={onDeleteExpense} 
+        />
       </TabsContent>
 
       <TabsContent value="balances">

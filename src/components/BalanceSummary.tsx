@@ -2,6 +2,7 @@
 import { Friend, Expense, SettlementPayment } from "@/types/expense";
 import { PaymentMethod } from "@/types/payment";
 import { CurrentBalances } from "@/components/balance/CurrentBalances";
+import { BalanceChart } from "@/components/balance/BalanceChart";
 import { SettlementPlan } from "@/components/balance/SettlementPlan";
 import { RecentPayments } from "@/components/balance/RecentPayments";
 import { calculateBalances, calculateDebts, formatCurrency } from "@/components/balance/BalanceCalculator";
@@ -27,11 +28,19 @@ export const BalanceSummary = ({
 
   return (
     <div className="space-y-6">
-      <CurrentBalances 
-        friends={friends} 
-        balances={balances} 
-        formatCurrency={formatCurrency} 
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BalanceChart 
+          friends={friends}
+          balances={balances}
+          formatCurrency={formatCurrency}
+        />
+        
+        <CurrentBalances 
+          friends={friends} 
+          balances={balances} 
+          formatCurrency={formatCurrency} 
+        />
+      </div>
 
       <SettlementPlan 
         debts={debts} 

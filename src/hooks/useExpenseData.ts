@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Expense, Split } from "@/types/expense";
 import { toast } from "@/components/ui/use-toast";
@@ -7,6 +6,7 @@ import { Session } from "@supabase/supabase-js";
 import { fetchExpenses } from "@/utils/expense/expenseQueries";
 import { createLocalExpense } from "@/utils/expense/expenseQueries";
 import { createDatabaseExpense } from "@/utils/expense/expenseMutations";
+import { deleteExpense } from "@/utils/expense/deleteExpense";
 
 export const useExpenseData = (session: Session | null) => {
   const queryClient = useQueryClient();
@@ -103,6 +103,36 @@ export const useExpenseData = (session: Session | null) => {
     }
   });
 
+  // Delete expense mutation
+  const deleteExpenseMutation = useMutation({
+    mutationFn: (expenseId: string) => deleteExpense(session, expenseId),
+    onSuccess: (_, expenseId) => {
+      console.log("Successfully deleted expense:", expenseId);
+      
+      // Update local cache
+      queryClient.setQueryData(['expenses'], (oldExpenses: Expense[] = []) => {
+        console.log("Updating expenses cache after deletion");
+        return oldExpenses.filter(expense => expense.id !== expenseId);
+      });
+      
+      // Explicitly invalidate the expenses query to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      
+      toast({
+        title: "Expense Deleted",
+        description: "The expense has been deleted successfully"
+      });
+    },
+    onError: (error: any) => {
+      console.error("Error in delete mutation:", error);
+      toast({
+        title: "Failed to Delete Expense",
+        description: error.message || "An error occurred while deleting the expense",
+        variant: "destructive"
+      });
+    }
+  });
+
   return {
     expenses,
     isExpensesLoading,
@@ -126,6 +156,10 @@ export const useExpenseData = (session: Session | null) => {
         splits: processedSplits, 
         groupId 
       });
+    },
+    handleDeleteExpense: (expenseId: string) => {
+      console.log("handleDeleteExpense called with:", expenseId);
+      deleteExpenseMutation.mutate(expenseId);
     },
     // For backward compatibility
     addExpense: (description: string, amount: number, paidBy: string, splits: Split[], groupId?: string) => {

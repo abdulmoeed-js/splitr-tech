@@ -8,9 +8,19 @@ interface FriendsListProps {
   friends: Friend[];
   onRemoveFriend: (friendId: string) => void;
   onUpdateFriend: (friend: Partial<Friend> & { id: string }) => void;
+  balances?: Record<string, number>;
+  formatCurrency?: (amount: number) => string;
+  onSettleUp?: (friendId: string) => void;
 }
 
-export const FriendsList = ({ friends, onRemoveFriend, onUpdateFriend }: FriendsListProps) => {
+export const FriendsList = ({ 
+  friends, 
+  onRemoveFriend, 
+  onUpdateFriend,
+  balances = {},
+  formatCurrency,
+  onSettleUp
+}: FriendsListProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingFriend, setEditingFriend] = useState<Friend | null>(null);
   
@@ -37,6 +47,9 @@ export const FriendsList = ({ friends, onRemoveFriend, onUpdateFriend }: Friends
           friend={friend}
           onEdit={handleEdit}
           onRemove={onRemoveFriend}
+          balance={balances[friend.id] || 0}
+          formatCurrency={formatCurrency}
+          onSettleUp={onSettleUp}
         />
       ))}
 
