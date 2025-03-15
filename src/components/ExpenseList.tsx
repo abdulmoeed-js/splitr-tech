@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -25,6 +24,7 @@ interface ExpenseListProps {
   groups?: FriendGroup[];
   onDeleteExpense?: (expenseId: string) => Promise<boolean> | void;
   isDeleting?: boolean;
+  deletingExpenseId?: string | null;
 }
 
 export const ExpenseList = ({ 
@@ -32,7 +32,8 @@ export const ExpenseList = ({
   friends, 
   groups = [], 
   onDeleteExpense,
-  isDeleting = false
+  isDeleting = false,
+  deletingExpenseId = null
 }: ExpenseListProps) => {
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -126,7 +127,9 @@ export const ExpenseList = ({
         // Find the group if it exists
         const group = expense.groupId ? validGroups.find(g => g.id === expense.groupId) : null;
         
-        const isCurrentlyDeleting = isDeletingExpense && expenseToDelete === expense.id;
+        // Check if this specific expense is being deleted
+        const isCurrentlyDeleting = isDeletingExpense && 
+          (deletingExpenseId === expense.id || expenseToDelete === expense.id);
         
         return (
           <Card key={expense.id} className="p-4 hover:shadow-md transition-shadow slide-up glass-panel">
