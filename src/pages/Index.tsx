@@ -32,8 +32,13 @@ export default function Home() {
   // Filter expenses and friends based on selected group
   const filteredExpenses = getFilteredExpenses(expenses, selectedGroupId);
   
-  // Make sure that we only use friends that exist in our data
-  const friendsMap = new Map(friends.map(f => [f.id, f]));
+  // Create a Map of friend IDs to friend objects, making sure we handle each entry correctly
+  const friendsMap = new Map<string, Friend>();
+  friends.forEach(friend => {
+    if (friend && friend.id) {
+      friendsMap.set(friend.id, friend);
+    }
+  });
   
   // Filter out expenses with invalid payers or splits
   const validExpenses = filteredExpenses.filter(expense => {
