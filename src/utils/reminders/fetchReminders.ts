@@ -25,6 +25,6 @@ export const fetchReminders = async (session: Session | null) => {
     createdAt: new Date(reminder.created_at || new Date()), // Add createdAt with fallback
     isRead: reminder.is_read,
     isPaid: reminder.is_paid,
-    message: reminder.message
+    ...(reminder.message && { message: reminder.message }) // Only include message if it exists
   }));
 };

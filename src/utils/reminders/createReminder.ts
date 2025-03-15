@@ -54,6 +54,6 @@ export const createReminder = async (
     createdAt: new Date(data.created_at),
     isRead: data.is_read,
     isPaid: data.is_paid,
-    message: data.message
+    ...(data.message && { message: data.message }) // Only include message if it exists
   };
 };
