@@ -84,6 +84,15 @@ export const useFriends = (session: Session | null, userName: string) => {
         });
         return;
       }
+      // Skip adding if the name is the same as userName (to prevent creating duplicate "You" entries)
+      if (name === userName) {
+        toast({
+          title: "Cannot add yourself",
+          description: "You are already in your friends list",
+          variant: "destructive"
+        });
+        return;
+      }
       addFriendMutation.mutate({ name, email, phone });
     },
     handleUpdateFriend: (friend: Partial<Friend> & { id: string }) => {
@@ -113,6 +122,16 @@ export const useFriends = (session: Session | null, userName: string) => {
         toast({
           title: "Authentication Required",
           description: "You must be logged in to remove friends",
+          variant: "destructive"
+        });
+        return;
+      }
+      // Find the friend to check if it's the "You" entry
+      const friendToRemove = friends.find(friend => friend.id === friendId);
+      if (friendToRemove && friendToRemove.name === userName) {
+        toast({
+          title: "Cannot remove yourself",
+          description: "You cannot remove yourself from your friends list",
           variant: "destructive"
         });
         return;

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 
@@ -21,7 +22,8 @@ export const cleanupDuplicateYouFriends = async (session: Session | null, userNa
     }
     
     if (!youFriends || youFriends.length <= 1) {
-      // No duplicates found
+      // No duplicates found or no "You" entries at all
+      console.log(`Found ${youFriends?.length || 0} "You" entries, no cleanup needed`);
       return;
     }
     
