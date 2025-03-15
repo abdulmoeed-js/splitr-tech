@@ -3,13 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./useSession";
 import { toast } from "@/components/ui/use-toast";
-
-interface PaymentProvider {
-  id: string;
-  provider: string;
-  isEnabled: boolean;
-  settings?: Record<string, any>;
-}
+import { PaymentProvider } from "@/types/payment";
 
 export const usePaymentProviders = () => {
   const [providers, setProviders] = useState<PaymentProvider[]>([]);
@@ -36,12 +30,12 @@ export const usePaymentProviders = () => {
 
         if (error) throw error;
 
-        // Transform data
+        // Transform data with proper type conversion
         const transformedData: PaymentProvider[] = data.map(item => ({
           id: item.id,
           provider: item.provider,
           isEnabled: item.is_enabled,
-          settings: item.settings
+          settings: item.settings as Record<string, any> | null
         }));
 
         // Ensure we have default providers if none exist
@@ -104,12 +98,13 @@ export const usePaymentProviders = () => {
         .eq('user_id', userId);
       
       if (data) {
-        setProviders(data.map(item => ({
+        const transformedData: PaymentProvider[] = data.map(item => ({
           id: item.id,
           provider: item.provider,
           isEnabled: item.is_enabled,
-          settings: item.settings
-        })));
+          settings: item.settings as Record<string, any> | null
+        }));
+        setProviders(transformedData);
       }
     } catch (error: any) {
       console.error("Error creating default providers:", error.message);

@@ -33,7 +33,7 @@ export const usePayments = (session: Session | null) => {
         amount: Number(payment.amount),
         date: new Date(payment.date),
         status: payment.status as "pending" | "completed",
-        method: payment.method as "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank",
+        method: payment.method as "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank" | "stripe" | "paypal",
         paymentMethodId: payment.payment_method_id,
         receiptUrl: payment.receipt_url
       }));
@@ -47,7 +47,7 @@ export const usePayments = (session: Session | null) => {
       fromFriendId: string; 
       toFriendId: string; 
       amount: number;
-      method: "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank";
+      method: "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank" | "stripe" | "paypal";
       status: "pending" | "completed";
       paymentMethodId?: string;
       receiptUrl?: string;
@@ -91,7 +91,7 @@ export const usePayments = (session: Session | null) => {
         amount: Number(data.amount),
         date: new Date(data.date),
         status: data.status as "pending" | "completed",
-        method: data.method as "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank",
+        method: data.method as "in-app" | "external" | "card" | "easypaisa" | "jazzcash" | "bank" | "stripe" | "paypal",
         paymentMethodId: data.payment_method_id,
         receiptUrl: data.receipt_url
       };

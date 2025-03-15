@@ -38,7 +38,7 @@ export const useSettlementDialog = (
 
       // Redirect to Stripe Checkout
       window.location.href = data.url;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error initiating Stripe checkout:', error);
       toast({
         variant: "destructive",
@@ -67,7 +67,7 @@ export const useSettlementDialog = (
 
       // Redirect to PayPal approval URL
       window.location.href = data.approvalUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error initiating PayPal checkout:', error);
       toast({
         variant: "destructive",
@@ -165,7 +165,7 @@ export const useSettlementDialog = (
         title: "PayPal Payment Successful",
         description: "Your payment has been processed successfully."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error capturing PayPal payment:', error);
       toast({
         variant: "destructive",

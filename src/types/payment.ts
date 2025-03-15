@@ -17,5 +17,5 @@ export interface PaymentProvider {
   id: string;
   provider: string;
   isEnabled: boolean;
-  settings?: Record<string, any>;
+  settings?: Record<string, any> | null;
 }
