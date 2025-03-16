@@ -36,8 +36,8 @@ export const BalanceChart = ({ balances, friends, formatCurrency }: BalanceChart
 
   // Prepare data for pie chart
   const chartData = [
-    { name: "Payable to you", value: payableTotals.payableToYou, color: "#10b981" }, // green
-    { name: "Payable to others", value: payableTotals.payableByYou, color: "#ef4444" }, // red
+    { name: "To Receive", value: payableTotals.payableToYou, color: "#10b981" }, // green
+    { name: "To Pay", value: payableTotals.payableByYou, color: "#ef4444" }, // red
   ].filter(item => item.value > 0); // Only show segments with value
 
   const COLORS = ["#10b981", "#ef4444"];
@@ -89,7 +89,7 @@ export const BalanceChart = ({ balances, friends, formatCurrency }: BalanceChart
           <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg">
             <div className="flex items-center gap-2">
               <ArrowDownToLine className="text-green-500 h-5 w-5" />
-              <span className="font-medium">Payable to you</span>
+              <span className="font-medium">To Receive</span>
             </div>
             <span className="font-bold text-green-600">{formatCurrency(payableTotals.payableToYou)}</span>
           </div>
@@ -99,7 +99,7 @@ export const BalanceChart = ({ balances, friends, formatCurrency }: BalanceChart
           <div className="flex items-center justify-between p-3 bg-red-500/10 rounded-lg">
             <div className="flex items-center gap-2">
               <ArrowUpFromLine className="text-red-500 h-5 w-5" />
-              <span className="font-medium">Payable to others</span>
+              <span className="font-medium">To Pay</span>
             </div>
             <span className="font-bold text-red-600">{formatCurrency(payableTotals.payableByYou)}</span>
           </div>
