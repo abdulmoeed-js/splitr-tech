@@ -1,5 +1,5 @@
 
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -14,6 +14,13 @@ export const SettlementAmount = ({
   setSettlementAmount,
   maxAmount
 }: SettlementAmountProps) => {
+  // Set the settlement amount to the maximum amount when the component mounts or maxAmount changes
+  useEffect(() => {
+    if (maxAmount > 0) {
+      setSettlementAmount(maxAmount.toFixed(2));
+    }
+  }, [maxAmount, setSettlementAmount]);
+
   return (
     <div className="space-y-2">
       <Label htmlFor="amount">Amount to Pay (PKR)</Label>

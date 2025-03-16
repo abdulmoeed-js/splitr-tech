@@ -22,8 +22,10 @@ export const fetchFriends = async (session: Session | null, userName: string) =>
       throw fetchError;
     }
     
-    // Check if "You" entry exists
-    const youFriends = allFriends?.filter(friend => friend.name === userName) || [];
+    // Check if "You" entry exists - IMPORTANT: do a case-insensitive match to prevent duplicates
+    const youFriends = allFriends?.filter(friend => 
+      friend.name.toLowerCase() === userName.toLowerCase()
+    ) || [];
     
     // If no "You" friend exists, create one
     if (youFriends.length === 0) {
@@ -34,7 +36,7 @@ export const fetchFriends = async (session: Session | null, userName: string) =>
         .from('friends')
         .insert({
           user_id: session.user.id,
-          name: userName,
+          name: userName, // Use exact userName to preserve case
           is_complete: true
         })
         .select()
@@ -48,29 +50,7 @@ export const fetchFriends = async (session: Session | null, userName: string) =>
     // If multiple "You" entries exist, keep only the oldest one
     else if (youFriends.length > 1) {
       console.log(`Found ${youFriends.length} entries for "You", cleaning up duplicates`);
-      
-      // Sort by created_at to find the oldest entry
-      youFriends.sort((a, b) => 
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-      
-      // Keep the oldest entry
-      const oldestYouFriendId = youFriends[0].id;
-      
-      // Delete all other entries
-      const { error: deleteError } = await supabase
-        .from('friends')
-        .delete()
-        .eq('user_id', session.user.id)
-        .eq('name', userName)
-        .neq('id', oldestYouFriendId);
-      
-      if (deleteError) {
-        console.error("Error deleting duplicate You friends:", deleteError);
-        throw deleteError;
-      }
-      
-      console.log(`Successfully removed ${youFriends.length - 1} duplicate "You" entries`);
+      await cleanupDuplicates(session, youFriends);
     }
 
     // Now fetch all friends again to get the updated list
@@ -96,7 +76,7 @@ export const fetchFriends = async (session: Session | null, userName: string) =>
     // Convert database records to Friend objects
     const friends = data.map(friend => ({
       id: friend.id,
-      name: friend.name,
+      name: friend.name.toLowerCase() === userName.toLowerCase() ? "You" : friend.name, // Display as "You" for the user
       email: friend.email || undefined,
       phone: friend.phone || undefined,
       isInvited: friend.is_invited || false,
@@ -109,4 +89,29 @@ export const fetchFriends = async (session: Session | null, userName: string) =>
     console.error("Error in fetchFriends:", error);
     throw error; // Throw error rather than returning empty array to trigger error state
   }
+};
+
+// Helper function to clean up duplicate "You" entries
+const cleanupDuplicates = async (session: Session, youFriends: any[]) => {
+  // Sort by created_at to find the oldest entry
+  youFriends.sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+  
+  // Keep the oldest entry
+  const oldestYouFriendId = youFriends[0].id;
+  
+  // Delete all other entries
+  const { error: deleteError } = await supabase
+    .from('friends')
+    .delete()
+    .eq('user_id', session.user.id)
+    .in('id', youFriends.slice(1).map(f => f.id)); // Use 'in' to delete all duplicates at once
+  
+  if (deleteError) {
+    console.error("Error deleting duplicate You friends:", deleteError);
+    throw deleteError;
+  }
+  
+  console.log(`Successfully removed ${youFriends.length - 1} duplicate "You" entries`);
 };

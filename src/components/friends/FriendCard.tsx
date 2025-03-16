@@ -49,6 +49,10 @@ export const FriendCard = ({
     }
   };
 
+  // Determine if user can settle up with this friend
+  // Only show settle up when there's a negative balance (user owes money)
+  const canSettleUp = balance < 0 && friend.name !== "You";
+
   return (
     <Card key={friend.id} className="p-4 glass-panel">
       <div className="flex justify-between items-start">
@@ -84,30 +88,28 @@ export const FriendCard = ({
           )}
           
           {/* Display balance information */}
-          {friend.id !== "1" && (
-            <div className="flex items-center ml-11 mt-2">
-              {balance > 0 ? (
-                <div className="flex items-center text-sm text-green-600">
-                  <ArrowDownToLine className="h-3 w-3 mr-2" />
-                  <span className="font-medium">{formatCurrency(balance)} owed to you</span>
-                </div>
-              ) : balance < 0 ? (
-                <div className="flex items-center text-sm text-red-600">
-                  <ArrowUpFromLine className="h-3 w-3 mr-2" />
-                  <span className="font-medium">{formatCurrency(Math.abs(balance))} you owe</span>
-                </div>
-              ) : (
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <span>Settled up</span>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="flex items-center ml-11 mt-2">
+            {balance > 0 ? (
+              <div className="flex items-center text-sm text-green-600">
+                <ArrowDownToLine className="h-3 w-3 mr-2" />
+                <span className="font-medium">{formatCurrency(balance)} owed to you</span>
+              </div>
+            ) : balance < 0 ? (
+              <div className="flex items-center text-sm text-red-600">
+                <ArrowUpFromLine className="h-3 w-3 mr-2" />
+                <span className="font-medium">{formatCurrency(Math.abs(balance))} you owe</span>
+              </div>
+            ) : (
+              <div className="flex items-center text-sm text-muted-foreground">
+                <span>Settled up</span>
+              </div>
+            )}
+          </div>
         </div>
         
         <div className="flex flex-col space-y-2">
           <div className="flex space-x-2">
-            {friend.id !== "1" && (
+            {friend.name !== "You" && (
               <>
                 <Button 
                   variant="ghost" 
@@ -151,8 +153,8 @@ export const FriendCard = ({
             )}
           </div>
           
-          {/* Add Settle Up button */}
-          {friend.id !== "1" && balance !== 0 && onSettleUp && (
+          {/* Only show Settle Up button when the user owes money (negative balance) */}
+          {canSettleUp && onSettleUp && (
             <Button 
               variant="outline" 
               size="sm" 

@@ -9,25 +9,30 @@ export const cleanupDuplicateYouFriends = async (session: Session | null, userNa
   }
 
   try {
-    // Find all "You" entries
-    const { data: youFriends, error: findError } = await supabase
+    // Find all "You" entries - use case-insensitive matching
+    console.log(`Looking for all instances of "${userName}" (case-insensitive) for user ${session.user.id}`);
+    const { data: allFriends, error: findError } = await supabase
       .from('friends')
       .select('*')
-      .eq('user_id', session.user.id)
-      .eq('name', userName);
+      .eq('user_id', session.user.id);
     
     if (findError) {
-      console.error("Error finding 'You' friends:", findError);
+      console.error("Error finding friends:", findError);
       throw findError;
     }
     
+    // Filter for case-insensitive matches to userName
+    const youFriends = allFriends?.filter(friend => 
+      friend.name.toLowerCase() === userName.toLowerCase()
+    ) || [];
+    
     if (!youFriends || youFriends.length <= 1) {
       // No duplicates found or no "You" entries at all
-      console.log(`Found ${youFriends?.length || 0} "You" entries, no cleanup needed`);
+      console.log(`Found ${youFriends?.length || 0} "${userName}" entries, no cleanup needed`);
       return;
     }
     
-    console.log(`Found ${youFriends.length} entries for "You", keeping only the oldest one`);
+    console.log(`Found ${youFriends.length} entries for "${userName}", keeping only the oldest one`);
     
     // Sort by created_at to find the oldest entry
     youFriends.sort((a, b) => 
@@ -42,15 +47,14 @@ export const cleanupDuplicateYouFriends = async (session: Session | null, userNa
       .from('friends')
       .delete()
       .eq('user_id', session.user.id)
-      .eq('name', userName)
-      .neq('id', oldestYouFriendId);
+      .in('id', youFriends.slice(1).map(f => f.id)); // Use 'in' to delete all duplicates at once
     
     if (deleteError) {
       console.error("Error deleting duplicate You friends:", deleteError);
       throw deleteError;
     }
     
-    console.log(`Successfully removed ${youFriends.length - 1} duplicate "You" entries`);
+    console.log(`Successfully removed ${youFriends.length - 1} duplicate "${userName}" entries`);
   } catch (error) {
     console.error("Error in cleanupDuplicateYouFriends:", error);
     throw error;
