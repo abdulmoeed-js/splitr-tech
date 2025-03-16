@@ -19,10 +19,10 @@ export const calculateBalances = (
 
   // Process expenses
   expenses.forEach((expense) => {
-    // Add amount to payer's balance
+    // Add amount to payer's balance (positive means others owe them)
     balances[expense.paidBy] += expense.amount;
     
-    // Subtract split amounts from each person's balance
+    // Subtract split amounts from each person's balance (negative means they owe the payer)
     expense.splits.forEach((split) => {
       balances[split.friendId] -= split.amount;
     });
@@ -31,10 +31,10 @@ export const calculateBalances = (
   // Process payments
   payments.forEach((payment) => {
     if (payment.status === "completed") {
-      // From friend pays money (negative balance)
+      // From friend pays money (decreases debt)
       balances[payment.fromFriendId] -= payment.amount;
       
-      // To friend receives money (positive balance)
+      // To friend receives money (decreases what was owed to them)
       balances[payment.toFriendId] += payment.amount;
     }
   });

@@ -11,12 +11,22 @@ interface BalanceChartProps {
 }
 
 export const BalanceChart = ({ balances, friends, formatCurrency }: BalanceChartProps) => {
-  // Calculate total payable to you and by you
+  // Find the "You" friend to correctly calculate user's perspective
+  const youFriend = friends.find(friend => friend.name === "You");
+  
+  // Calculate total payable to you and by you from the user's perspective
   const payableTotals = Object.entries(balances).reduce(
     (acc, [friendId, balance]) => {
+      // Skip the user's own balance in the calculation
+      if (youFriend && friendId === youFriend.id) {
+        return acc;
+      }
+      
       if (balance > 0) {
+        // Positive balance means this friend owes you money
         acc.payableToYou += balance;
       } else if (balance < 0) {
+        // Negative balance means you owe this friend money
         acc.payableByYou += Math.abs(balance);
       }
       return acc;

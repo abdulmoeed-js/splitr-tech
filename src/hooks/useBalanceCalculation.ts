@@ -22,7 +22,7 @@ export const useBalanceCalculation = () => {
         return;
       }
       
-      // Add the full amount to the payer's balance
+      // Add the full amount to the payer's balance (positive means others owe them)
       balances[paidBy] += expense.amount;
       
       // Process each split
@@ -33,7 +33,7 @@ export const useBalanceCalculation = () => {
           return;
         }
         
-        // Subtract the split amount from each friend's balance
+        // Subtract the split amount from each friend's balance (negative means they owe the payer)
         balances[split.friendId] -= split.amount;
       });
     });
@@ -49,7 +49,9 @@ export const useBalanceCalculation = () => {
       }
       
       // Adjust balances based on the payment
+      // When a friend pays, their balance increases (less debt)
       balances[fromFriendId] -= amount;
+      // When a friend receives payment, their balance decreases (received what was owed)
       balances[toFriendId] += amount;
     });
     
