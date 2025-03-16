@@ -22,12 +22,12 @@ export const BalanceChart = ({ balances, friends, formatCurrency }: BalanceChart
         return acc;
       }
       
-      if (balance > 0) {
-        // Positive balance means this friend owes you money
-        acc.payableToYou += balance;
-      } else if (balance < 0) {
-        // Negative balance means you owe this friend money
-        acc.payableByYou += Math.abs(balance);
+      if (balance < 0) {
+        // Negative balance means this friend owes you money (you need to receive)
+        acc.payableToYou += Math.abs(balance);
+      } else if (balance > 0) {
+        // Positive balance means you owe this friend money (you need to pay)
+        acc.payableByYou += balance;
       }
       return acc;
     },
