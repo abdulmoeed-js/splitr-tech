@@ -68,6 +68,8 @@ export function MainDashboard({
       {/* Settlement Dialog */}
       <SettlementDialogWrapper
         friends={friends}
+        expenses={validExpenses}  // Add the missing expenses prop
+        payments={payments}      // Add the missing payments prop
         selectedReminder={selectedReminder}
         onSettleReminder={onSettleReminder}
         onSettleDebt={onSettleDebt}
