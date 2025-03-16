@@ -93,6 +93,40 @@ export const useAuth = () => {
     }
   };
 
+  // Function to clear user data
+  const clearUserData = async () => {
+    if (!session?.user) {
+      toast({
+        variant: "destructive",
+        title: "Not authenticated",
+        description: "You must be logged in to clear your data",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke("clear-user-data", {
+        body: { user_id: session.user.id },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Data cleared",
+        description: "Your data has been cleared successfully. Please refresh the page.",
+      });
+    } catch (error: any) {
+      console.error("Error clearing user data:", error);
+      toast({
+        variant: "destructive",
+        title: "Error clearing data",
+        description: error.message || "An error occurred while clearing your data",
+      });
+    }
+  };
+
   console.log("useAuth hook returning:", { 
     isAuthenticated: !!session, 
     loading, 
@@ -105,5 +139,6 @@ export const useAuth = () => {
     isAuthenticated: !!session,
     user: session?.user ?? null,
     handleSignOut,
+    clearUserData,
   };
 };

@@ -26,7 +26,9 @@ export const SignUpPage = () => {
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log("Attempting to sign up with email:", email);
+      
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -34,15 +36,22 @@ export const SignUpPage = () => {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Sign up error:", error);
+        throw error;
+      }
+      
+      console.log("Sign up successful:", data);
       
       toast({
         title: "Sign up successful",
         description: "Please check your email to verify your account."
       });
       
+      // After successful signup, redirect to login page
       navigate("/login");
     } catch (error: any) {
+      console.error("Sign up error caught:", error);
       toast({
         variant: "destructive",
         title: "Sign up failed",
