@@ -29,6 +29,7 @@ function App() {
       <TooltipProvider>
         <Router>
           <ThemeProvider defaultTheme="dark" storageKey="expense-tracker-theme">
+            <Toaster />
             <Routes>
               <Route path="/login" element={<SignInPage />} />
               <Route path="/signup" element={<SignUpPage />} />
@@ -46,7 +47,6 @@ function App() {
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </div>
-                      <Toaster />
                     </ExpensesProvider>
                   </AuthWrapper>
                 }

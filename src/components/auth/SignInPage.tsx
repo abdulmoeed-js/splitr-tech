@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Navigate, useNavigate, useLocation } from "react-router-dom";
+import { Navigate, useNavigate, useLocation, Link } from "react-router-dom";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -36,7 +36,7 @@ export const SignInPage = () => {
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
@@ -55,6 +55,42 @@ export const SignInPage = () => {
         variant: "destructive",
         title: "Sign in failed",
         description: error.message || "Please check your credentials and try again"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Email required",
+        description: "Please enter your email address to reset your password"
+      });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Please check your email for password reset instructions"
+      });
+      
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      toast({
+        variant: "destructive",
+        title: "Reset password failed",
+        description: error.message || "Failed to send reset password email"
       });
     } finally {
       setLoading(false);
@@ -86,9 +122,13 @@ export const SignInPage = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <a href="#" className="text-xs text-primary">
+                  <button 
+                    type="button" 
+                    onClick={handleResetPassword}
+                    className="text-xs text-primary hover:underline"
+                  >
                     Forgot password?
-                  </a>
+                  </button>
                 </div>
                 <Input
                   id="password"
@@ -109,9 +149,9 @@ export const SignInPage = () => {
         <div className="mt-4 text-center">
           <p className="text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <a href="/signup" className="text-primary font-medium">
+            <Link to="/signup" className="text-primary font-medium">
               Sign up
-            </a>
+            </Link>
           </p>
         </div>
       </Card>

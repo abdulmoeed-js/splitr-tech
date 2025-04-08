@@ -13,26 +13,7 @@ export const useAuth = () => {
   useEffect(() => {
     console.log("Setting up auth listeners");
     
-    // Get initial session and set up auth state change listener
-    const fetchInitialSession = async () => {
-      try {
-        setLoading(true);
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        console.log("Initial session fetch complete, user authenticated:", !!initialSession?.user);
-        
-        if (initialSession) {
-          console.log("Found existing session, user is authenticated");
-          setSession(initialSession);
-        }
-      } catch (error) {
-        console.error("Error fetching initial session:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialSession();
-    
+    // Set up auth state listener FIRST
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log("Auth state changed:", event, "Session exists:", !!currentSession);
@@ -56,6 +37,26 @@ export const useAuth = () => {
       }
     );
 
+    // THEN get initial session
+    const fetchInitialSession = async () => {
+      try {
+        setLoading(true);
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log("Initial session fetch complete, user authenticated:", !!initialSession?.user);
+        
+        if (initialSession) {
+          console.log("Found existing session, user is authenticated");
+          setSession(initialSession);
+        }
+      } catch (error) {
+        console.error("Error fetching initial session:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialSession();
+    
     return () => {
       console.log("Cleaning up auth listeners");
       authListener.subscription.unsubscribe();
