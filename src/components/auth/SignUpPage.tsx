@@ -9,12 +9,18 @@ import { toast } from "../ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthLayout } from "./AuthLayout";
+import { Info } from "lucide-react";
 
 export const SignUpPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   
@@ -22,25 +28,46 @@ export const SignUpPage = () => {
     return <Navigate to="/" />;
   }
 
+  const validateForm = () => {
+    const newErrors: {
+      email?: string;
+      password?: string;
+      confirmPassword?: string;
+    } = {};
+    let isValid = true;
+
+    // Email validation
+    if (!email) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Please enter a valid email address";
+      isValid = false;
+    }
+
+    // Password validation
+    if (!password) {
+      newErrors.password = "Password is required";
+      isValid = false;
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+      isValid = false;
+    }
+
+    // Confirm password validation
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Password validation
-    if (password !== confirmPassword) {
-      toast({
-        variant: "destructive",
-        title: "Passwords do not match",
-        description: "Please ensure both passwords match"
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "Password too short",
-        description: "Password must be at least 6 characters long"
-      });
+    if (!validateForm()) {
       return;
     }
     
@@ -59,7 +86,17 @@ export const SignUpPage = () => {
       
       if (error) {
         console.error("Sign up error:", error);
-        throw error;
+        
+        // Specific error handling based on error message
+        if (error.message.includes("already registered")) {
+          setErrors({
+            ...errors,
+            email: "This email is already registered. Please use a different email or try logging in."
+          });
+        } else {
+          throw error;
+        }
+        return;
       }
       
       console.log("Sign up successful:", data);
@@ -93,10 +130,19 @@ export const SignUpPage = () => {
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email) {
+                  setErrors({ ...errors, email: undefined });
+                }
+              }}
               required
               placeholder="your.email@example.com"
+              className={errors.email ? "border-red-500" : ""}
             />
+            {errors.email && (
+              <p className="text-xs text-red-500">{errors.email}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
@@ -104,11 +150,25 @@ export const SignUpPage = () => {
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) {
+                  setErrors({ ...errors, password: undefined });
+                }
+              }}
               required
               placeholder="••••••••"
               minLength={6}
+              className={errors.password ? "border-red-500" : ""}
             />
+            {errors.password ? (
+              <p className="text-xs text-red-500">{errors.password}</p>
+            ) : (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Info className="h-3 w-3" />
+                <span>Password must be at least 6 characters</span>
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -116,18 +176,29 @@ export const SignUpPage = () => {
               id="confirmPassword"
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (errors.confirmPassword) {
+                  setErrors({ ...errors, confirmPassword: undefined });
+                }
+              }}
               required
               placeholder="••••••••"
               minLength={6}
+              className={errors.confirmPassword ? "border-red-500" : ""}
             />
-            <p className="text-xs text-muted-foreground">
-              Password must be at least 6 characters
-            </p>
+            {errors.confirmPassword && (
+              <p className="text-xs text-red-500">{errors.confirmPassword}</p>
+            )}
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creating Account..." : "Create Account"}
           </Button>
+          {loading && (
+            <p className="text-center text-xs text-muted-foreground">
+              This might take a moment...
+            </p>
+          )}
         </form>
         
         <div className="mt-4 text-center">
